@@ -1,13 +1,21 @@
-Support IR format:
-1. function define:
-define int foo(int a, int b); return value could be int/void
+# Support IR format:
 
+1. function define:
+```c++   
+define int foo(int a, int b); return value could be int/void
+// 支持定义函数，返回值可以是int/void
+```
 
 2. operators:
-support arrays: int a[100]; define int foo(int a[], int b[], int N); 
-load: load a value from array. a[10] cannot be used directly. load(a, 10);
-store: save a value to array. store(a, 10, c) -> a[10] = c;
-=: assign value to a variable, follows the static single assignment rule
+```c++
+// support arrays: 
+int a[100]; define int foo(int a[], int b[], int N); 
+// load: 
+load a value from array. a[10] cannot be used directly. load(a, 10);
+// store: 
+save a value to array. store(a, 10, c) -> a[10] = c;
+=: 
+   assign value to a variable, follows the static single assignment rule
 +: 
    c = a + b;
 -:
@@ -33,10 +41,10 @@ phi:
    phi(value1, block_label1, value2, block_label2, ...); The default block label from the definition of the function is 0.
 return:
    return a value
-
+```
 
 3. examples
-
+```c++
 define int dotprod(int a[], int b[], int n)
     c = 0;
 
@@ -57,4 +65,4 @@ calc:
 ret:
     cf = phi(0, c, start, cr);
     return cf;
-
+```
