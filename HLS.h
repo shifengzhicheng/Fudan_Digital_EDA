@@ -3,7 +3,7 @@
 #include "parser.h"
 struct op {
 	// 操作的变量
-	vector<var> vars;
+	std::vector<var> vars;
 	// 操作的
 	// 调研自己的函数部分，确定op应该拥有的变量
 	// 所有函数应该是修改图里的元素
@@ -22,13 +22,13 @@ struct op {
 	// 操作创建
 	op();
 	
-}
+};
 struct control_block {
 	// 控制器，第五部分可能用得到，
 	// 理论上需要插在块的跳转之间
-	vector<int> T;
-	vector<bool> cmd;
-}
+	std::vector<int> T;
+	std::vector<bool> cmd;
+};
 class HLS {
 	public:
 		HLS(const std::vector<basic_block>& bbs,
@@ -81,9 +81,9 @@ class HLS {
 		std::string _generated_rtl_code;
 
 		// 资源约束条件
-		int reg_num=;
-		int add_num=;
-		int mul_num=;
+		int reg_num=10;
+		int add_num=5;
+		int mul_num=5;
 
 
 		// 内部方法
