@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "HLS.h"
+// #include "HLS.h"
 #include <iostream>
 
 int main(int argc, char **argv)
@@ -65,12 +65,12 @@ int main(int argc, char **argv)
     }
 }
 	// 生成HLS综合器类
-	HLS Topmodule(bbs,fn_name,vars,ret_type);
+	// HLS Topmodule(bbs,fn_name,vars,ret_type);
 	
-	Topmodule.convert();
+	// Topmodule.convert();
 	
-	Topmodule.generate_rtl_operations();
+	// Topmodule.generate_rtl_operations();
 	
-	std::cout<<Topmodule.getRTLCode();
+	// std::cout<<Topmodule.getRTLCode();
 
 }
