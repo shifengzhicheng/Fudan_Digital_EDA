@@ -1,4 +1,5 @@
 #include "HLS.h"
+#include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
   基本块的结构包含vector<statement> _statements和_label，
@@ -6,8 +7,52 @@
   get_type()可以得到语句的操作类型
   get_num_oprands()可以得到操作数的数量，
   然后get_oprand(k)得到第k个操作数(从0开始)
-  最后这个操作将每个块内流程变成一个图 */
+  最后这个操作将整个函数变成一个完整的，因为循环存在，图是有环的
+  但因为phi操作代表的依赖是或关系，而且中间存在branch */
+void HLS::generate_CFG() {
+	// 通过IR生成数据流图以及控制流图
+	CFG=ControlFlowGraph(parsered);
+}
 
+void HLS::setTestTime() {
+	int T = 0;
+	for (auto i = CFG.getDFGNodes().begin(); i != CFG.getDFGNodes().end(); i++) {
+		for (auto j = i->DFG.get_opList().begin(); j != i->DFG.get_opList().end(); j++) {
+			j->setTstart(T++);
+			j->setTend(T++);
+		}
+	}
+}
+
+void HLS::travelaround() {
+	// 遍历DFGs向量
+	for (int DFGNode = 0; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
+		// 遍历DFGs[DFGNode]的每一个节点，初始节点为0
+		// 将这个节点的图取出来
+		DataFlowGraph& DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
+		// 图初始化
+		DFG.Initialize();
+		// 压入所有入度为0的节点
+		int CurrentNode;
+		std::queue<int> tq;
+		for (int i = 0; i < DFG.get_opList().size(); i++) {
+			if (DFG.get_opList()[i].InVertex == 0) {
+				tq.push(i);
+			}
+		}
+		// 拓扑排序遍历
+		while (!tq.empty()) {
+			CurrentNode = tq.front();
+			tq.pop();
+			DFG.Mark[CurrentNode] = VISITED;
+			for (int i = 0; i < DFG.get_opList()[CurrentNode].next.size(); i++) {
+				if (--DFG.InVertex[DFG.get_opList()[CurrentNode].next[i]]==0) {
+					tq.push(DFG.get_opList()[CurrentNode].next[i]);
+				}
+			}
+		}
+	}
+}
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
 /* 这个部分接收第一部分生成的图graph进行拓扑排序，包括带周期的ASAP和带周期的ALAP，
   这部分信息将被存储在图的每个节点中 */
@@ -23,3 +68,5 @@
 // 使用匈牙利算法或者最小代价匹配实现
 
 // 第六部分是控制逻辑综合，控制不同块之间的跳转，最终的代码逻辑的实现部分
+
+
