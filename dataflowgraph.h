@@ -141,8 +141,6 @@ class op {
 class node {
 		// 链表的节点，这个是链表中的元素
 	public:
-		// 节点的入度
-		int InVertex;
 		// 节点的数据
 		op element;
 		// 节点指向的节点的下标数组
