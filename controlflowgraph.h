@@ -40,8 +40,9 @@ class ControlFlowGraph {
 			// 首先生成一个空块来装函数的输入变量
 			{
 				DataFlowGraph dfg;
+				dfg.get_opList().push_back(op());
+				dfg.get_opList().push_back(op());
 				for (int i = 0; i < vars.size(); i++) {
-					dfg.get_opList().push_back(op());
 					IndexofDFG[dfg.get_label()] = 0;
 					dfg.myOutvartable()[vars[i]._name] = 1;
 				}
