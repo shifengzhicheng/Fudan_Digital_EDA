@@ -46,7 +46,17 @@ void HLS::travelaround() {
 			tq.pop();
 			DFG.Mark[CurrentNode] = VISITED;
 			for (int i = 0; i < DFG.get_opList()[CurrentNode].next.size(); i++) {
-				if (--DFG.InVertex[DFG.get_opList()[CurrentNode].next[i]]==0) {
+				// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
+				int nextNodeIndex = DFG.get_opList()[CurrentNode].next[i];
+				node& nextNode = DFG.get_opList()[nextNodeIndex];
+				// 根据第i个节点的输入变量情况，减少入度
+				for (int k = 0; k < nextNode.InputVar.size(); k++) {
+					if (DFG.myOutvartable()[nextNode.InputVar[k]]==CurrentNode) {
+						nextNode.InVertex--;
+					}
+				}
+				// 入度小于等于0则进入队列
+				if (DFG.InVertex[DFG.get_opList()[CurrentNode].next[i]] <= 0) {
 					tq.push(DFG.get_opList()[CurrentNode].next[i]);
 				}
 			}
