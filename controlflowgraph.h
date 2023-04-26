@@ -77,7 +77,17 @@ class ControlFlowGraph {
 				}
 			}
 			// inputList生成完毕，至此，所有的依赖已经完成
-
+			// 循环结束之后把输出的变量都输出到虚节点
+			for (int i = 0; i < DFGs.size(); i++) {
+				DataFlowGraph& CurDFG = DFGs[i].DFG;
+				int ToIndex = CurDFG.get_opList().size() - 1;
+				for (int j = 0; j < CurDFG.get_outputList().size(); j++) {
+					std::string OutBlockVarName = CurDFG.get_outputList()[j].OutBlockVarName;
+					int FromIndex = CurDFG.myOutvartable()[OutBlockVarName];					
+					//CurDFG.CreateEdge(FromIndex, ToIndex);
+					CurDFG.get_opList()[ToIndex].InputVar.push_back(OutBlockVarName);
+				}
+			}
 		}
 
 		// Operation
