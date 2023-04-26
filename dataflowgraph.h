@@ -182,10 +182,12 @@ enum CONDTYPE {
 	IfTrue,
 	UnConditonal
 };
+
 enum IsVISITED {
 	UNVISITED,
 	VISITED
 };
+
 struct InputEdge {
 	//数据流图中输入节点结构
 	std::string From_Block;//该输入来自哪个模块
@@ -199,18 +201,27 @@ struct InputEdge {
 	}
 };
 
-struct OutputEdge {
+struct OutputEdge{
+	// 有可能有别的需求
+	std::string To_Block;// 这个变量应该前往哪一个块
+	std::string OutBlockVarName;// 输出变量名
+	OutputEdge(std::string _To_Block, std::string _OutBlockVarName) {
+		To_Block = _To_Block;
+		OutBlockVarName = _OutBlockVarName;
+	}
+};
+struct BranchEdge {
 	int cond;// 0false,1true,2无条件
 	std::string From_Block;
 	std::string To_Block;
 	bool Isreturn;
-	OutputEdge(std::string _From_Block, std::string _To_Block, int _cond) {
+	BranchEdge(std::string _From_Block, std::string _To_Block, int _cond) {
 		cond = _cond;
 		Isreturn = false;
 		From_Block = _From_Block;
 		To_Block = _To_Block;
 	}
-	OutputEdge() {
+	BranchEdge() {
 		cond = 2;
 		Isreturn = false;
 	}
@@ -235,11 +246,14 @@ class DataFlowGraph {
 		// 输入的变量的列表
 		std::vector<InputEdge> inputList;	
 
+		// 需要输出的变量的列表
+		std::vector<OutputEdge> outputList;
+
 		// 主体，在本数据块中的节点列表
-		std::vector<node> ops;			
+		std::vector<node> opList;			
 
 		// 跳转边列表
-		std::vector<OutputEdge> outputlist; 
+		std::vector<BranchEdge> Branchs; 
 
 		// 从变量的名字，到这个变量的index的hash表，用于在块内查找邻接数据
 		std::unordered_map<std::string, int> vartable;
@@ -250,36 +264,16 @@ class DataFlowGraph {
 // 
 		// 私有方法，生成节点之间的边
 		void CreateEdge(int from, int to) {
-			if (from < ops.size()) {
+			if (from < opList.size()) {
 				//TODO
 				// 在from和to之间加边，同时to的入度++
 				// from的next数组中push进了to
-				ops[from].next.push_back(to);
+				opList[from].next.push_back(to);
 			}
 		}
 		// 找到节点的输入变量的输出节点的index，然后在其next中加上to
 		void CreateEdge(std::string Inputvar, int to) {
-			// Check if Inputvar is pure numbers
-			//bool isPureNumber = true;
-			//for (char c : Inputvar) {
-			//	if (!std::isdigit(c)) {
-			//		isPureNumber = false;
-			//		break;
-			//	}
-			//}
-
-			//if (isPureNumber) {
-			//	return;
-			//}
-			//bool AlreadyIn = vartable.find(Inputvar) != vartable.end();
-			//if (AlreadyIn && vartable[Inputvar] != 0) {
 				CreateEdge(vartable[Inputvar], to);
-			//}
-			//else {
-				//if(!AlreadyIn)
-					//inputList.push_back(InputEdge(Inputvar));
-				//CreateEdge(0, to);
-			//}
 		}
 		void CreateEdges(node &CurNode, int to) {
 			for (int i = 0; i < CurNode.element.getInputvars().size(); i++)
@@ -312,6 +306,7 @@ class DataFlowGraph {
 				}			
 				if (flag)
 					inputList.push_back(InputEdge(CurNode.element.getInputvars()[i]));
+				vartable[CurNode.element.getInputvars()[i]] = 0;
 				CreateEdge(0, to);
 			}
 		}
@@ -339,7 +334,7 @@ class DataFlowGraph {
 			label = bb.get_label_name();
 			int node_num = bb.get_statements().size();
 			// 压入一个没有入度的空节点，这个节点关乎inputList
-			ops.push_back(op());
+			opList.push_back(op());
 			// 这里处理输入节点表并将这个节点提供的变量名hash到0
 			// 这个操作需要在控制流完成之后完成，实际上只要检测到没有定义的变量就直接
 			// 假设是从块外来的即可
@@ -358,13 +353,13 @@ class DataFlowGraph {
 				// BR
 				if (CurNode.element.getOPtype() == OP_BR) {
 					if (CurNode.element.getInputvars().size() == 1) {
-						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[0], UnConditonal));
+						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[0], UnConditonal));
 					} else if (CurNode.element.getInputvars().size() == 3) {
 						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
 						// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
 						CreateEdge(CurNode, 0, currentNode);
-						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[1], IfFalse));
-						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[2], IfTrue));
+						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[1], IfFalse));
+						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[2], IfTrue));
 					}
 				}
 				// 处理RET
@@ -373,9 +368,9 @@ class DataFlowGraph {
 						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
 						CreateEdge(CurNode, 0, currentNode);
 					}
-					OutputEdge returnEdge(label, CurNode.element.getInputvars()[0], UnConditonal);
+					BranchEdge returnEdge(label, CurNode.element.getInputvars()[0], UnConditonal);
 					returnEdge.Isreturn = true;
-					outputlist.push_back(returnEdge);
+					Branchs.push_back(returnEdge);
 				}
 
 				// 处理phi
@@ -408,14 +403,17 @@ class DataFlowGraph {
 					CreateEdges(CurNode, currentNode);
 				}
 
-				ops.push_back(CurNode);
+				opList.push_back(CurNode);
 			}
+			opList.push_back(op());
 		}
 		DataFlowGraph() {
-			OutputEdge out;
+			opList.push_back(op());
+			BranchEdge out;
 			label = "fiction_head";
 			out.From_Block = label;
-			outputlist.push_back(out);
+			Branchs.push_back(out);
+			opList.push_back(op());
 		}
 
 		// operation
@@ -425,16 +423,19 @@ class DataFlowGraph {
 		// get
 
 		// 节点列表
-		std::vector<node> &get_opList() {
-			return ops;
+		std::vector<node>& get_opList() {
+			return opList;
 		}
 		// 输出边列表
-		std::vector<OutputEdge> &get_outputEdge() {
-			return outputlist;
+		std::vector<BranchEdge>& get_Branches() {
+			return Branchs;
 		}
 		// 输入变量列表
-		std::vector<InputEdge> &get_inputList() {
+		std::vector<InputEdge>& get_inputList() {
 			return inputList;
+		}
+		std::vector<OutputEdge>& get_outputList() {
+			return outputList;
 		}
 		// 模块名
 		std::string &get_label() {
@@ -442,7 +443,7 @@ class DataFlowGraph {
 		}
 		// 节点的出度节点
 		std::vector<int>& ToVertex(int from) {
-			return ops[from].next;
+			return opList[from].next;
 		}
 		// 输出变量的哈希表
 		std::unordered_map<std::string, int>& myOutvartable() {
