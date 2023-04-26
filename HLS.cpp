@@ -36,7 +36,7 @@ void HLS::travelaround() {
 		int CurrentNode;
 		std::queue<int> tq;
 		for (int i = 0; i < DFG.get_opList().size(); i++) {
-			if (DFG.get_opList()[i].InVertex == 0) {
+			if (DFG.InVertex[i] == 0) {
 				tq.push(i);
 			}
 		}
@@ -52,7 +52,7 @@ void HLS::travelaround() {
 				// 根据第i个节点的输入变量情况，减少入度
 				for (int k = 0; k < nextNode.InputVar.size(); k++) {
 					if (DFG.myOutvartable()[nextNode.InputVar[k]]==CurrentNode) {
-						nextNode.InVertex--;
+						DFG.InVertex[nextNodeIndex]--;
 					}
 				}
 				// 入度小于等于0则进入队列
