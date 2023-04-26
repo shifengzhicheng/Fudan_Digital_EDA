@@ -154,16 +154,13 @@ class node {
 		node(const op& elemval, std::vector<int> &_next) {
 			element = elemval;
 			next = _next;
-			InVertex = 0;
 			T_start = T_end = 0;
 		}
 		node(const op& elemval) {
 			element = elemval;
-			InVertex = 0;
 			T_start = T_end = 0;
 		}
 		node() {
-			InVertex = 0;
 			T_start = T_end = 0;
 		}
 		int getTstart() const {
@@ -263,26 +260,26 @@ class DataFlowGraph {
 		// 找到节点的输入变量的输出节点的index，然后在其next中加上to
 		void CreateEdge(std::string Inputvar, int to) {
 			// Check if Inputvar is pure numbers
-			bool isPureNumber = true;
-			for (char c : Inputvar) {
-				if (!std::isdigit(c)) {
-					isPureNumber = false;
-					break;
-				}
-			}
+			//bool isPureNumber = true;
+			//for (char c : Inputvar) {
+			//	if (!std::isdigit(c)) {
+			//		isPureNumber = false;
+			//		break;
+			//	}
+			//}
 
-			if (isPureNumber) {
-				return;
-			}
-			bool AlreadyIn = vartable.find(Inputvar) != vartable.end();
-			if (AlreadyIn && vartable[Inputvar] != 0) {
+			//if (isPureNumber) {
+			//	return;
+			//}
+			//bool AlreadyIn = vartable.find(Inputvar) != vartable.end();
+			//if (AlreadyIn && vartable[Inputvar] != 0) {
 				CreateEdge(vartable[Inputvar], to);
-			}
-			else {
-				if(!AlreadyIn)
-					inputList.push_back(InputEdge(Inputvar));
-				CreateEdge(0, to);
-			}
+			//}
+			//else {
+				//if(!AlreadyIn)
+					//inputList.push_back(InputEdge(Inputvar));
+				//CreateEdge(0, to);
+			//}
 		}
 		void CreateEdges(node &CurNode, int to) {
 			for (int i = 0; i < CurNode.element.getInputvars().size(); i++)
@@ -301,11 +298,20 @@ class DataFlowGraph {
 			if (isPureNumber) {
 				return;
 			}
-			if (vartable.find(CurNode.element.getInputvars()[i]) != vartable.end() && vartable[CurNode.element.getInputvars()[i]] != 0) {
+			bool AlreadyIn = vartable.find(CurNode.element.getInputvars()[i]) != vartable.end();
+			if (AlreadyIn && vartable[CurNode.element.getInputvars()[i]] != 0) {
 				CreateEdge(vartable[CurNode.element.getInputvars()[i]], to);
 			}
 			else {
-				inputList.push_back(InputEdge(CurNode.element.getInputvars()[i]));
+				bool flag = true;
+				for (int j = 0; j < inputList.size(); j++) {
+					if (CurNode.element.getInputvars()[i] == inputList[j].InputBlockVarName) {
+						flag = false;
+						break;
+					}
+				}			
+				if (flag)
+					inputList.push_back(InputEdge(CurNode.element.getInputvars()[i]));
 				CreateEdge(0, to);
 			}
 		}
@@ -321,7 +327,12 @@ class DataFlowGraph {
 			InVertex = std::vector<int>(get_opList().size());
 			Mark = std::vector<bool>(get_opList().size(),UNVISITED);
 			for (int i = 0; i < get_opList().size(); i++) {
-				InVertex[i] = get_opList()[i].InputVar.size();
+				if (get_opList()[i].element.getOPtype() != OP_PHI) {
+					InVertex[i] = get_opList()[i].InputVar.size();
+				}
+				else {
+					InVertex[i] = 1;
+				}
 			}
 		}
 		DataFlowGraph(basic_block& bb) {
@@ -351,7 +362,7 @@ class DataFlowGraph {
 					} else if (CurNode.element.getInputvars().size() == 3) {
 						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
 						// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
-						CreateEdge(CurNode.element.getInputvars()[0], currentNode);
+						CreateEdge(CurNode, 0, currentNode);
 						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[1], IfFalse));
 						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[2], IfTrue));
 					}
