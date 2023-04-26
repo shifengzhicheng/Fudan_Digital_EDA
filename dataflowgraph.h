@@ -146,6 +146,7 @@ class node {
 		// 节点的数据
 		op element;
 		// 节点指向的节点的下标数组
+		std::vector<std::string> InputVar;
 		std::vector<int> next;
 		// 操作开始周期
 		int T_start;
@@ -309,7 +310,6 @@ class DataFlowGraph {
 				inputList.push_back(InputEdge(CurNode.element.getInputvars()[i]));
 				CreateEdge(0, to);
 			}
-			CurNode.InVertex++;
 		}
 	public:
 
@@ -323,7 +323,7 @@ class DataFlowGraph {
 			InVertex = std::vector<int>(get_opList().size());
 			Mark = std::vector<bool>(get_opList().size(),UNVISITED);
 			for (int i = 0; i < get_opList().size(); i++) {
-				InVertex[i] = get_opList()[i].InVertex;
+				InVertex[i] = get_opList()[i].InputVar.size();
 			}
 		}
 		DataFlowGraph(basic_block& bb) {
@@ -349,10 +349,9 @@ class DataFlowGraph {
 				// BR
 				if (CurNode.element.getOPtype() == OP_BR) {
 					if (CurNode.element.getInputvars().size() == 1) {
-						CurNode.InVertex = 0;
 						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[0], UnConditonal));
 					} else if (CurNode.element.getInputvars().size() == 3) {
-						CurNode.InVertex = 1;
+						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
 						// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
 						CreateEdge(CurNode.element.getInputvars()[0], currentNode);
 						outputlist.push_back(OutputEdge(label, CurNode.element.getInputvars()[1], IfFalse));
@@ -362,7 +361,7 @@ class DataFlowGraph {
 				// 处理RET
 				else if (CurNode.element.getOPtype() == OP_RET) {
 					if (!CurNode.element.getInputvars().empty()) {
-						CurNode.InVertex++;
+						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
 						CreateEdge(CurNode, 0, currentNode);
 					}
 					OutputEdge returnEdge(label, CurNode.element.getInputvars()[0], UnConditonal);
@@ -375,7 +374,7 @@ class DataFlowGraph {
 					for (int k = 0; k < CurNode.element.getInputvars().size(); k++) {
 						if (k % 2 == 0) {
 							// 将输入节点压入
-							CurNode.InVertex = 1;
+							CurNode.InputVar.push_back(CurNode.element.getInputvars()[k]);
 							// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
 							CreateEdge(CurNode, k, currentNode);
 						}
@@ -388,13 +387,15 @@ class DataFlowGraph {
 					// 访存请求建立
 					memory.push_back(Memaccess(label, currentNode,
 					                           CurNode.element.getInputvars()[0], CurNode.element.getInputvars()[1]));
+					for(int i = 0;i<CurNode.element.getInputvars().size();i++)
+						CurNode.InputVar.push_back(CurNode.element.getInputvars()[i]);
 					CreateEdges(CurNode, currentNode);
 				}
 				// 处理正常节点
 				else {
 					// 节点的入度初始化
-					
-					CurNode.InVertex = CurNode.element.getInputvars().size();
+					for (int i = 0; i < CurNode.element.getInputvars().size(); i++)
+						CurNode.InputVar.push_back(CurNode.element.getInputvars()[i]);
 					CreateEdges(CurNode, currentNode);
 				}
 
