@@ -3,21 +3,21 @@
 #include "parser.h"
 #include "unordered_map"
 // 操作周期宏定义
-#define	T_ASSIGN 1  // 赋值操作
-#define	T_ADD 1     // 加法操作
-#define	T_SUB 1    // 减法操作
-#define	T_MUL 1    // 乘法操作
-#define	T_DIV 1    // 除法操作
-#define	T_LOAD 1   // 载入操作
-#define	T_STORE 1  // 存储操作
-#define	T_BR 1     // 分支操作
-#define	T_LT 1     // 小于操作
-#define	T_GT 1     // 大于操作
-#define	T_LE 1     // 小于等于操作
-#define	T_GE 1     // 大于等于操作
-#define	T_EQ 1     // 等于操作
-#define	T_PHI 1    // Phi 操作
-#define	T_RET 1     // 返回操作
+constexpr auto  T_ASSIGN = 1;  // 赋值操作;
+constexpr auto	T_ADD = 1;     // 加法操作
+constexpr auto	T_SUB = 1;    // 减法操作
+constexpr auto	T_MUL = 1;    // 乘法操作
+constexpr auto  T_DIV = 1;// 除法操作
+constexpr auto	T_LOAD = 1;// 载入操作
+constexpr auto	T_STORE = 1;  // 存储操作
+constexpr auto	T_BR = 1;   // 分支操作
+constexpr auto	T_LT = 1;   // 小于操作
+constexpr auto	T_GT = 1;   // 大于操作
+constexpr auto	T_LE = 1;   // 小于等于操作
+constexpr auto	T_GE = 1;    // 大于等于操作
+constexpr auto	T_EQ = 1;   // 等于操作
+constexpr auto	T_PHI = 1;  // Phi 操作
+constexpr auto	T_RET = 1;     // 返回操作
 
 
 class HardwareConstraints {
@@ -51,7 +51,7 @@ class op {
 		// 操作的所需周期
 		int T;
 
-
+		int set_T(int type);
 	public:
 		std::vector<std::string> &getInputvars() {
 			return inputvars;
@@ -67,10 +67,7 @@ class op {
 		}
 
 
-		// 操作绑定的寄存器
-		void bindregister();
-		// 操作绑定的运算资源
-		void bindCacRes();
+
 		// 操作创建
 		// op初始化函数
 		op(statement &_statement): T(set_T(_statement.get_type())) {
@@ -79,62 +76,7 @@ class op {
 				inputvars.push_back(_statement.get_oprand(k));
 			outputvar = _statement.get_var();
 		}
-		op(): T(0) {};
-		int set_T(int type) {
-			int result = 0;
-			switch (type) {
-				case OP_ASSIGN:
-					result = T_ASSIGN;
-					break;
-				case OP_ADD:
-					result = T_ADD;
-					break;
-				case OP_SUB:
-					result = T_SUB;
-					break;
-				case OP_MUL:
-					result = T_MUL;
-					break;
-				case OP_DIV:
-					result = T_DIV;
-					break;
-				case OP_LOAD:
-					result = T_LOAD;
-					break;
-				case OP_STORE:
-					result = T_STORE;
-					break;
-				case OP_BR:
-					result = T_BR;
-					break;
-				case OP_LT:
-					result = T_LT;
-					break;
-				case OP_GT:
-					result = T_GT;
-					break;
-				case OP_LE:
-					result = T_LE;
-					break;
-				case OP_GE:
-					result = T_GE;
-					break;
-				case OP_EQ:
-					result = T_EQ;
-					break;
-				case OP_PHI:
-					result = T_PHI;
-					break;
-				case OP_RET:
-					result = T_RET;
-					break;
-				default:
-					// handle error case
-					result = 0;
-					break;
-			}
-			return result;
-		}
+		op(): T(0) {};		
 
 };
 
@@ -175,6 +117,10 @@ class node {
 		void setTend(int CurrentT) {
 			T_end = CurrentT;
 		}
+		// 操作绑定的寄存器
+		void bindregister();
+		// 操作绑定的运算资源
+		void bindCacRes();
 };
 
 enum CONDTYPE {
@@ -260,56 +206,7 @@ class DataFlowGraph {
 
 		// 与内存的交互
 		std::vector<Memaccess> memory;
-//		std::vector<int> Mark;
-// 
-		// 私有方法，生成节点之间的边
-		void CreateEdge(int from, int to) {
-			if (from < opList.size()) {
-				//TODO
-				// 在from和to之间加边，同时to的入度++
-				// from的next数组中push进了to
-				opList[from].next.push_back(to);
-			}
-		}
-		// 找到节点的输入变量的输出节点的index，然后在其next中加上to
-		void CreateEdge(std::string Inputvar, int to) {
-				CreateEdge(vartable[Inputvar], to);
-		}
-		void CreateEdges(node &CurNode, int to) {
-			for (int i = 0; i < CurNode.element.getInputvars().size(); i++)
-			{
-				CreateEdge(CurNode, i, to);
-			}
-		}
-		void CreateEdge(node& CurNode, int i, int to) {
-			bool isPureNumber = true;
-			for (char c : CurNode.element.getInputvars()[i]) {
-				if (!std::isdigit(c)) {
-					isPureNumber = false;
-					break;
-				}
-			}
-			if (isPureNumber) {
-				return;
-			}
-			bool AlreadyIn = vartable.find(CurNode.element.getInputvars()[i]) != vartable.end();
-			if (AlreadyIn && vartable[CurNode.element.getInputvars()[i]] != 0) {
-				CreateEdge(vartable[CurNode.element.getInputvars()[i]], to);
-			}
-			else {
-				bool flag = true;
-				for (int j = 0; j < inputList.size(); j++) {
-					if (CurNode.element.getInputvars()[i] == inputList[j].InputBlockVarName) {
-						flag = false;
-						break;
-					}
-				}			
-				if (flag)
-					inputList.push_back(InputEdge(CurNode.element.getInputvars()[i]));
-				vartable[CurNode.element.getInputvars()[i]] = 0;
-				CreateEdge(0, to);
-			}
-		}
+
 	public:
 
 		// CreateGraph
@@ -318,95 +215,9 @@ class DataFlowGraph {
 		std::vector<bool> Mark;
 		// 用于标记节点当前的入度，为0表示可以被直接访问
 		std::vector<int> InVertex;
-		void Initialize() {
-			InVertex = std::vector<int>(get_opList().size());
-			Mark = std::vector<bool>(get_opList().size(),UNVISITED);
-			for (int i = 0; i < get_opList().size(); i++) {
-				if (get_opList()[i].element.getOPtype() != OP_PHI) {
-					InVertex[i] = get_opList()[i].InputVar.size();
-				}
-				else {
-					InVertex[i] = 1;
-				}
-			}
-		}
-		DataFlowGraph(basic_block& bb) {
-			label = bb.get_label_name();
-			int node_num = bb.get_statements().size();
-			// 压入一个没有入度的空节点，这个节点关乎inputList
-			opList.push_back(op());
-			// 这里处理输入节点表并将这个节点提供的变量名hash到0
-			// 这个操作需要在控制流完成之后完成，实际上只要检测到没有定义的变量就直接
-			// 假设是从块外来的即可
-			//for (int i = 0; i < inputList.size(); i++) {
-			//	vartable[inputList[i].InputBlockVarName] = 0;
-			//}
-			for (int i = 0; i < node_num; i++) {
-				//TODO
-				int currentNode = i + 1;
-				node CurNode(op(bb.get_statements()[i]));
-				// 当前节点的输出变量放入当前块的变量表中
-				if (!CurNode.element.getOutputvar().empty()) {
-					vartable[CurNode.element.getOutputvar()] = currentNode;
-				}
-				// 处理分支指令
-				// BR
-				if (CurNode.element.getOPtype() == OP_BR) {
-					if (CurNode.element.getInputvars().size() == 1) {
-						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[0], UnConditonal));
-					} else if (CurNode.element.getInputvars().size() == 3) {
-						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
-						// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
-						CreateEdge(CurNode, 0, currentNode);
-						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[1], IfFalse));
-						Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[2], IfTrue));
-					}
-				}
-				// 处理RET
-				else if (CurNode.element.getOPtype() == OP_RET) {
-					if (!CurNode.element.getInputvars().empty()) {
-						CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
-						CreateEdge(CurNode, 0, currentNode);
-					}
-					BranchEdge returnEdge(label, CurNode.element.getInputvars()[0], UnConditonal);
-					returnEdge.Isreturn = true;
-					Branchs.push_back(returnEdge);
-				}
 
-				// 处理phi
-				else if (CurNode.element.getOPtype() == OP_PHI) {
-					for (int k = 0; k < CurNode.element.getInputvars().size(); k++) {
-						if (k % 2 == 0) {
-							// 将输入节点压入
-							CurNode.InputVar.push_back(CurNode.element.getInputvars()[k]);
-							// 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
-							CreateEdge(CurNode, k, currentNode);
-						}
-					}
-				}
-				// 处理load
-				else if (CurNode.element.getOPtype() == OP_LOAD) {
-					// load操作比较特殊，需要有与memory交互的数据流
-					// 取地址，然后根据地址索引
-					// 访存请求建立
-					memory.push_back(Memaccess(label, currentNode,
-					                           CurNode.element.getInputvars()[0], CurNode.element.getInputvars()[1]));
-					for(int i = 0;i<CurNode.element.getInputvars().size();i++)
-						CurNode.InputVar.push_back(CurNode.element.getInputvars()[i]);
-					CreateEdges(CurNode, currentNode);
-				}
-				// 处理正常节点
-				else {
-					// 节点的入度初始化
-					for (int i = 0; i < CurNode.element.getInputvars().size(); i++)
-						CurNode.InputVar.push_back(CurNode.element.getInputvars()[i]);
-					CreateEdges(CurNode, currentNode);
-				}
-
-				opList.push_back(CurNode);
-			}
-			opList.push_back(op());
-		}
+		DataFlowGraph(basic_block& bb);
+		
 		DataFlowGraph() {
 			opList.push_back(op());
 			BranchEdge out;
@@ -417,9 +228,13 @@ class DataFlowGraph {
 		}
 
 		// operation
-		// 
-
-
+		// 创建边
+		void CreateEdge(int from, int to);
+		void CreateEdge(std::string Inputvar, int to);
+		void CreateEdges(node& CurNode, int to);
+		void CreateEdge(node& CurNode, int i, int to);
+		// 初始化入度以及访问状况
+		void Initialize();
 		// get
 
 		// 节点列表
@@ -441,14 +256,17 @@ class DataFlowGraph {
 		std::string &get_label() {
 			return label;
 		}
+
 		// 节点的出度节点
 		std::vector<int>& ToVertex(int from) {
 			return opList[from].next;
 		}
+
 		// 输出变量的哈希表
 		std::unordered_map<std::string, int>& myOutvartable() {
 			return vartable;
 		}
+
 };
 
 #endif
