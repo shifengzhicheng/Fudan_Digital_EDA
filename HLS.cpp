@@ -1,4 +1,6 @@
-#include "HLS.h"
+﻿#include "HLS.h"
+#include "leftAlgorithm.h"
+#include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
   基本块的结构包含vector<statement> _statements和_label，
@@ -10,22 +12,85 @@
   但因为phi操作代表的依赖是或关系，而且中间存在branch */
 void HLS::generate_CFG() {
 	// 通过IR生成数据流图以及控制流图
-	CFG=ControlFlowGraph(parsered);
+	CFG = ControlFlowGraph(parsered);
 }
+
+void HLS::setTestTime() {
+	int T = 0;
+	for (auto i = CFG.getDFGNodes().begin(); i != CFG.getDFGNodes().end(); i++) {
+		for (auto j = i->DFG.get_opList().begin(); j != i->DFG.get_opList().end(); j++) {
+			j->setTstart(T++);
+			j->setTend(T++);
+		}
+	}
+}
+
+void HLS::travelaround() {
+	// 遍历DFGs向量
+	for (int DFGNode = 0; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
+		// 遍历DFGs[DFGNode]的每一个节点，初始节点为0
+		// 将这个节点的图取出来
+		DataFlowGraph& DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
+		// 图初始化
+		DFG.Initialize();
+		// 压入所有入度为0的节点
+		int CurrentNode;
+		std::queue<int> tq;
+		for (int i = 0; i < DFG.get_opList().size(); i++) {
+			if (DFG.InVertex[i] == 0) {
+				tq.push(i);
+			}
+		}
+		// 拓扑排序遍历
+		while (!tq.empty()) {
+			CurrentNode = tq.front();
+			tq.pop();
+			DFG.Mark[CurrentNode] = VISITED;
+			for (int i = 0; i < DFG.get_opList()[CurrentNode].next.size(); i++) {
+				// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
+				int nextNodeIndex = DFG.get_opList()[CurrentNode].next[i];
+				node& nextNode = DFG.get_opList()[nextNodeIndex];
+				// 根据第i个节点的输入变量情况，减少入度
+				for (int k = 0; k < nextNode.InputVar.size(); k++) {
+					if (DFG.myOutvartable()[nextNode.InputVar[k]] == CurrentNode) {
+						DFG.InVertex[nextNodeIndex]--;
+					}
+				}
+				// 入度小于等于0则进入队列
+				if (DFG.InVertex[DFG.get_opList()[CurrentNode].next[i]] <= 0) {
+					tq.push(DFG.get_opList()[CurrentNode].next[i]);
+				}
+			}
+		}
+	}
+}
+
+void HLS::perform_register_allocation_and_binding() {
+	std::vector<graph_node> DFGS = CFG.getDFGNodes();
+	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
+	{
+		REG.push_back(binding((*iter).DFG));
+	}
+}
+
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
 /* 这个部分接收第一部分生成的图graph进行拓扑排序，包括带周期的ASAP和带周期的ALAP，
   这部分信息将被存储在图的每个节点中 */
 
-// 第三部分在基本的时序约束的基础上再基于资源进行整数线性规划得到最优的Latency
-/* 这个部分接收上面的带有周期约束条件的节点，进行ILP，实现Latency最小的SDC描述并计算出图中所有节点的运行周期 */
+  // 第三部分在基本的时序约束的基础上再基于资源进行整数线性规划得到最优的Latency
+  /* 这个部分接收上面的带有周期约束条件的节点，进行ILP，实现Latency最小的SDC描述并计算出图中所有节点的运行周期 */
 
-// 第四部分得到了最优Latency以后，还要这个时候每个单元的busy周期，并将数据与寄存器进行绑定，
-// 假定寄存器数量没有上限，但是需要使用尽可能少的寄存器
-/* 这个部分基于已经有的单元的时序情况分配寄存器来存储不同的数据 */
+  // 第四部分得到了最优Latency以后，还要这个时候每个单元的busy周期，并将数据与寄存器进行绑定，
+  // 假定寄存器数量没有上限，但是需要使用尽可能少的寄存器
+  /* 这个部分基于已经有的单元的时序情况分配寄存器来存储不同的数据 */
 
-// 第五部分对计算的资源同样进行绑定，在有限的计算资源约束下完成与寄存器的配对，需要加入选择器进行配对
-// 使用匈牙利算法或者最小代价匹配实现
+  // 第五部分对计算的资源同样进行绑定，在有限的计算资源约束下完成与寄存器的配对，需要加入选择器进行配对
+  // 使用匈牙利算法或者最小代价匹配实现
 
-// 第六部分是控制逻辑综合，控制不同块之间的跳转，最终的代码逻辑的实现部分
+  // 第六部分是控制逻辑综合，控制不同块之间的跳转，最终的代码逻辑的实现部分
+
+
+
+
 
 
