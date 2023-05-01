@@ -1,4 +1,4 @@
-﻿#include "HLS.h"
+#include "HLS.h"
 #include "leftAlgorithm.h"
 #include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图

@@ -1,4 +1,4 @@
-﻿#ifndef HLS_H
+#ifndef HLS_H
 #define HLS_H
 #include "parser.h"
 #include "dataflowgraph.h"
