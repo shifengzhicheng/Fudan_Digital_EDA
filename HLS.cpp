@@ -72,6 +72,18 @@ void HLS::perform_register_allocation_and_binding() {
 		REG.push_back(binding((*iter).DFG));
 	}
 }
+void HLS::perform_calculate_allocation_and_binding() {
+	std::vector<std::vector<std::pair<std::string,int>>> REG1 = getREG();
+	std::vector<graph_node> DFGS = CFG.getDFGNodes();
+	vector<computeresource> CORE;
+	std::vector<std::vector<std::pair<std::string, int>>>::iterator iter2 = REG.begin();
+	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
+	{
+		CSP.push_back(bindcomputeresource((iter->DFG), *iter2, CORE));
+		iter2++;
+	}
+	COR = CORE;
+}
 
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
 /* 这个部分接收第一部分生成的图graph进行拓扑排序，包括带周期的ASAP和带周期的ALAP，
