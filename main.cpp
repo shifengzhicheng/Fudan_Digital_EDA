@@ -69,6 +69,7 @@ int main() {
 
 	// bind
 	hls.perform_register_allocation_and_binding();
+	hls.perform_calculate_allocation_and_binding();
 	
 	/*std::vector<std::vector<std::pair<std::string, int>>> REG;
 	std::vector<graph_node> DFGS = hls.getCFG().getDFGNodes();
