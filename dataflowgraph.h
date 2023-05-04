@@ -122,6 +122,58 @@ class node {
 		// 操作绑定的运算资源
 		void bindCacRes();
 };
+//计算资源定义（默认绑定的node的 vector InputVar中都有一个or两个变量，之后再改）
+class computeresource {
+public:
+	//声明计算资源是加法器or乘法器
+	int flag;
+	//左边输入寄存器
+	std::vector<int> Ainputregisters;
+	//右边输入寄存器
+	std::vector<int> Binputregisters;
+	//输出寄存器
+	int outputregister;
+	//定义计算资源，参数为1为加法器，参数为2为乘法器
+	computeresource(int flag1,int outputreg) {
+		if (flag1 == 1 || flag1 == 2) {
+			flag = flag1;
+			outputregister = outputreg;
+		}
+		else {
+			std::cout << "wrong computeresource define!" << std::endl;
+		}
+	}
+	computeresource() {};
+	void setinputAregisters(int reg) {
+		Ainputregisters.push_back(reg);
+	}
+	void setinputBregisters(int reg) {
+		Binputregisters.push_back(reg);
+	}
+	bool findareg(int reg) {
+		for (std::vector<int>::iterator it = Ainputregisters.begin(); it != Ainputregisters.end(); it++) {
+			if (reg == *it)
+				return true;
+		}
+		return false;
+	}
+	bool findbreg(int reg) {
+		for (std::vector<int>::iterator it = Binputregisters.begin(); it != Binputregisters.end(); it++) {
+			if (reg == *it) return true;
+		}
+		return false;
+	}
+	void setoutputregister(int reg) {
+		if (outputregister != -1) {
+			std::cout << "output register has already set! error" << std::endl;
+			return;
+		}
+		else {
+			outputregister = reg;
+		}
+	}
+};
+
 
 enum CONDTYPE {
 	IfFalse,
