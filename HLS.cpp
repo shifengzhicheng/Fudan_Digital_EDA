@@ -1,5 +1,6 @@
 #include "HLS.h"
 #include "leftAlgorithm.h"
+#include "schedule.h"
 #include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
@@ -63,6 +64,10 @@ void HLS::travelaround() {
 			}
 		}
 	}
+}
+
+void HLS::perform_scheduling(){
+        table_schedule(CFG);
 }
 
 void HLS::perform_register_allocation_and_binding() {
