@@ -14,10 +14,10 @@ private:
 	ControlFlowGraph CFG;
 	// REG
 	std::vector<std::vector<std::pair<std::string, int>>> REG;
-	//计算资源（包括加法器和乘法器）
+	//计算资源（包括加法器、乘法器和除法器）
 	std::vector<computeresource> COR;
-	//计算资源匹配结果（匹配的是node结点和计算资源COR的序号）
-	std::vector<std::vector<std::pair<node,int>>>  CSP;
+	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
+	std::vector<std::vector<std::pair<int,int>>>  CSP;
 public:
 	HLS(parser& p) : parsered(p) {}
 
