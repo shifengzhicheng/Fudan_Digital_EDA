@@ -133,14 +133,14 @@ public:
 	std::vector<int> Binputregisters;
 	//输出寄存器
 	int outputregister;
-	//定义计算资源，参数为1为加法器，参数为2为乘法器
-	computeresource(int flag1,int outputreg) {
-		if (flag1 == 1 || flag1 == 2) {
+	//定义计算资源，参数为1为加法器，参数为2为乘法器，参数为3为除法器
+	computeresource(int flag1, int outputreg) {
+		if (flag1 == 1 || flag1 == 2||flag1 == 3) {
 			flag = flag1;
 			outputregister = outputreg;
 		}
 		else {
-			std::cout << "wrong computeresource define!" << std::endl;
+			//std::cout << "wrong computeresource define!" << std::endl;
 		}
 	}
 	computeresource() {};
