@@ -2,6 +2,7 @@
 #include "leftAlgorithm.h"
 #include "schedule.h"
 #include "Hungarian_algorithm.h"
+#include "control_logic.h"
 #include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
@@ -131,6 +132,24 @@ void HLS::perform_calculate_allocation_and_binding() {
 		iter2++;
 	}
 	COR = CORE;
+}
+
+void HLS::synthesize_control_logic() {
+	std::vector<std::vector<std::pair<std::string, int>>> REG1 = getREG();
+	std::vector<graph_node> DFGS = CFG.getDFGNodes();
+	std::vector<std::vector<std::pair<std::string, int>>>::iterator iter2 = REG.begin();
+
+	for (int i = 0; i < DFGS.size(); i++) {
+		DataFlowGraph dfg = DFGS[i].DFG;
+		std::vector<std::pair<std::string, int>> _REG = *iter2;
+		MicrocodeController controller(dfg, *iter2, COR, CSP[i]);
+
+		controller.generateCycles(_REG);
+		std::vector<Cycle> Cycle = controller.getCycle();
+		Cycles.push_back(Cycle);
+		std::cout << "\n\n\n\n";
+		iter2++;
+	}
 }
 
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
