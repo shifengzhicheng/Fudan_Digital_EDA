@@ -4,6 +4,7 @@
 #include "dataflowgraph.h"
 #include "controlflowgraph.h"
 #include <iostream>
+#include"computeresource.h"
 
 class HLS {
 private:
