@@ -1,7 +1,7 @@
 #ifndef HUNGARIAN_H
 #define HUNGARIAN_H
 #include"leftAlgorithm.h"
-
+#include"computeresource.h"
 
 
 //寻找特定DFG下的变量对应的寄存器
