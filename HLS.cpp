@@ -106,7 +106,7 @@ void HLS::travelback() {
 }
 
 void HLS::perform_scheduling(){
-        table_schedule(CFG);
+        improved_schedule_forCFG(CFG);
 }
 
 void HLS::perform_register_allocation_and_binding() {
