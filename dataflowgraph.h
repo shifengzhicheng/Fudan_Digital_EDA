@@ -207,6 +207,7 @@ class DataFlowGraph {
 		// 与内存的交互
 		std::vector<Memaccess> memory;
 
+		int period = 0;
 	public:
 
 		// CreateGraph
@@ -218,7 +219,7 @@ class DataFlowGraph {
 		// 用于标记节点当前的出度
 		std::vector<int> OutVertex;
 		// DFG所需要的总周期
-		int T_total = 0;
+		
 		DataFlowGraph(basic_block& bb);
 		
 		DataFlowGraph() {
@@ -271,6 +272,14 @@ class DataFlowGraph {
 			return vartable;
 		}
 
+		// 修改流图的最短周期
+		int getPeriod() const {
+			return period;
+		}
+
+		void setPeriod(int T) {
+			period = T;
+		}
 };
 
 #endif
