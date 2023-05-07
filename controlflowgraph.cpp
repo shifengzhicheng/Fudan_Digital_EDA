@@ -66,7 +66,8 @@ ControlFlowGraph::ControlFlowGraph(parser& p) {
         for (int j = 0; j < CurDFG.get_outputList().size(); j++) {
             std::string OutBlockVarName = CurDFG.get_outputList()[j].OutBlockVarName;
             int FromIndex = CurDFG.myOutvartable()[OutBlockVarName];
-            //CurDFG.CreateEdge(FromIndex, ToIndex);
+            // 在from和to之间创建一个边
+            CurDFG.CreateEdge(FromIndex, ToIndex);
             CurDFG.get_opList()[ToIndex].InputVar.push_back(OutBlockVarName);
         }
     }

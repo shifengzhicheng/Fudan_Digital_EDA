@@ -64,6 +64,17 @@ void DataFlowGraph::CreateEdge(int from, int to) {
         opList[from].next.push_back(to);
     }
 }
+// 判断是否是纯数字
+bool DataFlowGraph::ispureNumber(std::string InputVar) {
+    bool isPureNumber = true;
+    for (char c : InputVar) {
+        if (!std::isdigit(c)) {
+            isPureNumber = false;
+            break;
+        }
+    }
+    return isPureNumber;
+}
 // 找到节点的输入变量的输出节点的index，然后在其next中加上to
 void DataFlowGraph::CreateEdge(std::string Inputvar, int to) {
     CreateEdge(vartable[Inputvar], to);
@@ -75,14 +86,8 @@ void DataFlowGraph::CreateEdges(node& CurNode, int to) {
     }
 }
 void DataFlowGraph::CreateEdge(node& CurNode, int i, int to) {
-    bool isPureNumber = true;
     std::string InputVar = CurNode.element.getInputvars()[i];
-    for (char c : InputVar) {
-        if (!std::isdigit(c)) {
-            isPureNumber = false;
-            break;
-        }
-    }
+    bool isPureNumber = ispureNumber(InputVar);
     if (isPureNumber) {
         return;
     }
@@ -180,13 +185,19 @@ DataFlowGraph::DataFlowGraph(basic_block& bb) {
 
 void DataFlowGraph::Initialize() {
     InVertex = std::vector<int>(get_opList().size());
+    OutVertex = std::vector<int>(get_opList().size());
     Mark = std::vector<bool>(get_opList().size(), UNVISITED);
     for (int i = 0; i < get_opList().size(); i++) {
         if (get_opList()[i].element.getOPtype() != OP_PHI) {
-            InVertex[i] = get_opList()[i].InputVar.size();
+            for (auto Var : get_opList()[i].InputVar) {
+                if (ispureNumber(Var)) continue;
+                InVertex[i]++;
+            }
+            
         }
         else {
             InVertex[i] = 1;
         }
+        OutVertex[i] = ToVertex(i).size();
     }
 }

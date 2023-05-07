@@ -215,7 +215,10 @@ class DataFlowGraph {
 		std::vector<bool> Mark;
 		// 用于标记节点当前的入度，为0表示可以被直接访问
 		std::vector<int> InVertex;
-
+		// 用于标记节点当前的出度
+		std::vector<int> OutVertex;
+		// DFG所需要的总周期
+		int T_total = 0;
 		DataFlowGraph(basic_block& bb);
 		
 		DataFlowGraph() {
@@ -230,6 +233,7 @@ class DataFlowGraph {
 		// operation
 		// 创建边
 		void CreateEdge(int from, int to);
+		bool ispureNumber(std::string var);
 		void CreateEdge(std::string Inputvar, int to);
 		void CreateEdges(node& CurNode, int to);
 		void CreateEdge(node& CurNode, int i, int to);
@@ -253,7 +257,7 @@ class DataFlowGraph {
 			return outputList;
 		}
 		// 模块名
-		std::string &get_label() {
+		std::string& get_label() {
 			return label;
 		}
 
