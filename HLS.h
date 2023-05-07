@@ -18,7 +18,7 @@ private:
 	//计算资源（包括加法器、乘法器和除法器）
 	std::vector<computeresource> COR;
 	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
-	std::vector<std::vector<std::pair<int,int>>>  CSP;
+	std::vector<std::vector<std::pair<int, int>>>  CSP;
 public:
 	HLS(parser& p) : parsered(p) {}
 
@@ -62,6 +62,7 @@ public:
 	void setTestTime();
 	// 遍历所有节点的算法
 	void travelaround();
+	void travelback();
 	// 实现调度算法
 	void perform_scheduling();
 	// 实现寄存器分配和绑定

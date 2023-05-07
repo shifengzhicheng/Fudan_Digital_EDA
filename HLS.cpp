@@ -1,6 +1,7 @@
 #include "HLS.h"
 #include "leftAlgorithm.h"
 #include "schedule.h"
+#include "Hungarian_algorithm.h"
 #include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
@@ -11,6 +12,9 @@
   然后get_oprand(k)得到第k个操作数(从0开始)
   最后这个操作将整个函数变成一个完整的，因为循环存在，图是有环的
   但因为phi操作代表的依赖是或关系，而且中间存在branch */
+void HLS::generate_rtl_operations() const
+{
+}
 void HLS::generate_CFG() {
 	// 通过IR生成数据流图以及控制流图
 	CFG = ControlFlowGraph(parsered);
@@ -105,8 +109,8 @@ void HLS::travelback() {
 	}
 }
 
-void HLS::perform_scheduling(){
-        improved_schedule_forCFG(CFG);
+void HLS::perform_scheduling() {
+	improved_schedule_forCFG(CFG);
 }
 
 void HLS::perform_register_allocation_and_binding() {
@@ -117,9 +121,9 @@ void HLS::perform_register_allocation_and_binding() {
 	}
 }
 void HLS::perform_calculate_allocation_and_binding() {
-	std::vector<std::vector<std::pair<std::string,int>>> REG1 = getREG();
+	std::vector<std::vector<std::pair<std::string, int>>> REG1 = getREG();
 	std::vector<graph_node> DFGS = CFG.getDFGNodes();
-	vector<computeresource> CORE;
+	std::vector<computeresource> CORE;
 	std::vector<std::vector<std::pair<std::string, int>>>::iterator iter2 = REG.begin();
 	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
 	{

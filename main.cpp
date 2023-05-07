@@ -66,11 +66,12 @@ int main() {
 	// 获得DFG节点
 	hls.setTestTime();
 	hls.travelaround();
-
+	hls.travelback();
+	hls.perform_scheduling();
 	// bind
 	hls.perform_register_allocation_and_binding();
 	hls.perform_calculate_allocation_and_binding();
-	
+	//hls.synthesize_control_logic();
 	/*std::vector<std::vector<std::pair<std::string, int>>> REG;
 	std::vector<graph_node> DFGS = hls.getCFG().getDFGNodes();
 	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
