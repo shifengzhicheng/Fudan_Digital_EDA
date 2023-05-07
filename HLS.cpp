@@ -28,7 +28,7 @@ void HLS::setTestTime() {
 
 void HLS::travelaround() {
 	// 遍历DFGs向量
-	for (int DFGNode = 0; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
+	for (int DFGNode = 1; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
 		// 遍历DFGs[DFGNode]的每一个节点，初始节点为0
 		// 将这个节点的图取出来
 		DataFlowGraph& DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
@@ -47,19 +47,58 @@ void HLS::travelaround() {
 			CurrentNode = tq.front();
 			tq.pop();
 			DFG.Mark[CurrentNode] = VISITED;
-			for (int i = 0; i < DFG.get_opList()[CurrentNode].next.size(); i++) {
+			for (int i = 0; i < DFG.ToVertex(CurrentNode).size(); i++) {
 				// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
-				int nextNodeIndex = DFG.get_opList()[CurrentNode].next[i];
+				int nextNodeIndex = DFG.ToVertex(CurrentNode)[i];
 				node& nextNode = DFG.get_opList()[nextNodeIndex];
 				// 根据第i个节点的输入变量情况，减少入度
 				for (int k = 0; k < nextNode.InputVar.size(); k++) {
-					if (DFG.myOutvartable()[nextNode.InputVar[k]] == CurrentNode) {
+					if (DFG.myOutvartable().find(nextNode.InputVar[k])!= DFG.myOutvartable().end() && DFG.myOutvartable()[nextNode.InputVar[k]] == CurrentNode) {
 						DFG.InVertex[nextNodeIndex]--;
 					}
 				}
 				// 入度小于等于0则进入队列
-				if (DFG.InVertex[DFG.get_opList()[CurrentNode].next[i]] <= 0) {
-					tq.push(DFG.get_opList()[CurrentNode].next[i]);
+				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] <= 0 && DFG.Mark[CurrentNode] == UNVISITED) {
+					tq.push(DFG.ToVertex(CurrentNode)[i]);
+				}
+			}
+		}
+	}
+}
+
+void HLS::travelback() {
+	// 遍历DFGs向量
+	for (int DFGNode = 1; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
+		// 遍历DFGs[DFGNode]的每一个节点，初始节点为0
+		// 将这个节点的图取出来
+		DataFlowGraph& DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
+		// 图初始化
+		DFG.Initialize();
+		// 压入所有入度为0的节点
+		int CurrentNode;
+		std::queue<int> tq;
+		for (int i = 1; i < DFG.get_opList().size(); i++) {
+			if (DFG.OutVertex[i] == 0) {
+				tq.push(i);
+			}
+		}
+		// 拓扑排序遍历
+		while (!tq.empty()) {
+			CurrentNode = tq.front();
+			tq.pop();
+			DFG.Mark[CurrentNode] = VISITED;
+			node& Node = DFG.get_opList()[CurrentNode];
+			for (int i = 0; i < Node.InputVar.size(); i++) {
+				// 得到当前节点的输入变量，
+				int ForeNodeIndex;
+				if (DFG.myOutvartable().find(Node.InputVar[i]) != DFG.myOutvartable().end())
+					ForeNodeIndex = DFG.myOutvartable()[Node.InputVar[i]];
+				else break;
+				// 根据第i个节点的输入变量情况，减少前面节点的出度
+				DFG.OutVertex[ForeNodeIndex]--;
+				// 入度小于等于0则进入队列
+				if (DFG.OutVertex[ForeNodeIndex] <= 0 && DFG.Mark[CurrentNode] == UNVISITED) {
+					tq.push(ForeNodeIndex);
 				}
 			}
 		}
