@@ -10,14 +10,13 @@ bool varPeridCmp_stop(varPeriod a, varPeriod b)
 	return a.stopp < b.stopp;
 }
 
-/********************************** ryh的leftAlgorithm中的结构，到时候要删掉 **************************************/
 class Register {
 private:
-	varPeriod now_reg_data;						//寄存器中当前存储的变量
+	varPeriod now_reg_data;				//寄存器中当前存储的变量
 	std::vector<varPeriod> all_reg_datas;		//寄存器中会存储的所有的变量
 
 public:
-	int reg_index;								//寄存器的下标，与ryh的pair的索引值相对应
+	int reg_index;					//寄存器的下标，与ryh的pair的索引值相对应
 	Register() {};
 
 	// 更新并获取当前周期中寄存器存储的值
@@ -41,7 +40,7 @@ public:
 				return true;
 			}
 		}
-		std::cout << "寄存器中没有存储过该变量！" << std::endl;
+		//std::cout << "寄存器中没有存储过该变量！" << std::endl;
 		return false;
 	}
 
@@ -70,14 +69,14 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 						v.var = (*i).var;
 						v.stopp = (*i).stopp;
 						flag = 1;
-						(*it).addData(v);				//添加到寄存器中
+						(*it).addData(v);		//添加到寄存器中
 						break;
 					}
 				}
 				break;
 			}
 		}
-		if (flag == 0) {											//未找到该寄存器，则新建一个寄存器
+		if (flag == 0) {						//未找到该寄存器，则新建一个寄存器
 			Register r;
 			r.reg_index = iter->second;
 			for (std::vector<varPeriod>::iterator i = varPeriods.begin(); i != varPeriods.end(); i++) {
@@ -85,11 +84,11 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 					v.startp = (*i).startp;
 					v.var = (*i).var;
 					v.stopp = (*i).stopp;
-					r.addData(v);							//添加到寄存器中
+					r.addData(v);				//添加到寄存器中
 					break;
 				}
 			}
-			Regs.push_back(r);							//将新建的寄存器加入向量中
+			Regs.push_back(r);					//将新建的寄存器加入向量中
 		}
 	}
 }
@@ -104,13 +103,13 @@ bool find(std::vector<int> v, int data) {
 
 class Mux {
 private:
-	std::vector<int> mux_inputs;				//选择器连接的所有输入寄存器的下标
-	int mux_selectInput;						//选择的输入数据对应的寄存器
-	int output_compute;							//连接的输出的计算资源
-	int flag;									//0为左边，1为右边
+	std::vector<int> mux_inputs;		//选择器连接的所有输入寄存器的下标
+	int mux_selectInput;			//选择的输入数据对应的寄存器
+	int output_compute;			//连接的输出的计算资源
+	int flag;				//0为左边，1为右边
 
 public:
-	int mux_index;								//选择器下标
+	int mux_index;				//选择器下标
 	Mux() { }
 	Mux(int L_or_R, int _compute, std::vector<computeresource> com) {
 		std::vector<int> inputs;
@@ -136,7 +135,7 @@ public:
 				return true;
 			}
 		}
-		std::cout << "选择器输入端不包括该寄存器！" << std::endl;
+		//std::cout << "选择器输入端不包括该寄存器！" << std::endl;
 		return false;
 	}
 
@@ -202,17 +201,17 @@ public:
 
 struct cycletable {
 	std::string var;	//变量
-	int com;			//变量var活跃期间使用的计算资源
-	int reg;			//使用的寄存器
-	int mux;			//使用的选择器
+	int com;		//变量var活跃期间使用的计算资源
+	int reg;		//使用的寄存器
+	int mux;		//使用的选择器
 };
 
 // 控制器
 class MicrocodeController {
 private:
-	std::vector<Register> Regs;				//所有的寄存器
-	std::vector<Mux> Muxs;					//所有的选择器
-	DataFlowGraph DFG;						//表示当前控制器是处在哪一块中的
+	std::vector<Register> Regs;		//所有的寄存器
+	std::vector<Mux> Muxs;			//所有的选择器
+	DataFlowGraph DFG;			//表示当前控制器是处在哪一块中的
 	std::vector<std::pair<int, int>> CSP;	//计算资源匹配结果
 	std::vector<computeresource> Compute;				
 	std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
@@ -252,7 +251,7 @@ public:
 		int cycle;		//所处周期，遍历使用
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		sort(V.begin(), V.end(), varPeridCmp_stop);
-		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
+		int total_cycle = V[V.size() - 1].stopp;	//最后一个变量的终止周期
 
 		for (cycle = 1; cycle <= total_cycle; cycle++) {
 			//对每个选择器进行遍历，记录其选择的寄存器输入数据到table中
@@ -274,7 +273,7 @@ public:
 	void generateCycles(std::vector<std::pair<std::string, int>> _REG) {
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		sort(V.begin(), V.end(), varPeridCmp_stop);
-		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
+		int total_cycle = V[V.size() - 1].stopp;	//最后一个变量的终止周期
 		std::vector<Cycle> cycle(total_cycle + 1);
 
 		std::vector<node> List = DFG.get_opList();
@@ -310,16 +309,16 @@ public:
 
 		for (int i = 1; i < size; i++) {
 			//对每个OP进行遍历
-			int opType = List[i].element.getOPtype();					//每句话的optype
-			int compute_index;						//每句话绑定的计算资源
+			int opType = List[i].element.getOPtype();	//每句话的optype
+			int compute_index;				//每句话绑定的计算资源
 			int reg_return;
 			std::cout << CSP.size() << std::endl;
 			if (CSP.size() == 0) {
-				compute_index = -1;						//每句话绑定的计算资源
+				compute_index = -1;			//每句话绑定的计算资源
 				reg_return = -1;
 			}
 			else {
-				compute_index = CSP[i-1].second;						//每句话绑定的计算资源
+				compute_index = CSP[i-1].second;	//每句话绑定的计算资源
 				reg_return = Compute[compute_index].outputregister;
 			}
 			
