@@ -12,11 +12,11 @@ bool varPeridCmp_stop(varPeriod a, varPeriod b)
 
 class Register {
 private:
-	varPeriod now_reg_data;				//寄存器中当前存储的变量
+	varPeriod now_reg_data;						//寄存器中当前存储的变量
 	std::vector<varPeriod> all_reg_datas;		//寄存器中会存储的所有的变量
 
 public:
-	int reg_index;					//寄存器的下标，与ryh的pair的索引值相对应
+	int reg_index;								//寄存器的下标，与ryh的pair的索引值相对应
 	Register() {};
 
 	// 更新并获取当前周期中寄存器存储的值
@@ -40,7 +40,7 @@ public:
 				return true;
 			}
 		}
-		//std::cout << "寄存器中没有存储过该变量！" << std::endl;
+		std::cout << "寄存器中没有存储过该变量！" << std::endl;
 		return false;
 	}
 
@@ -69,14 +69,14 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 						v.var = (*i).var;
 						v.stopp = (*i).stopp;
 						flag = 1;
-						(*it).addData(v);		//添加到寄存器中
+						(*it).addData(v);				//添加到寄存器中
 						break;
 					}
 				}
 				break;
 			}
 		}
-		if (flag == 0) {						//未找到该寄存器，则新建一个寄存器
+		if (flag == 0) {											//未找到该寄存器，则新建一个寄存器
 			Register r;
 			r.reg_index = iter->second;
 			for (std::vector<varPeriod>::iterator i = varPeriods.begin(); i != varPeriods.end(); i++) {
@@ -84,11 +84,11 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 					v.startp = (*i).startp;
 					v.var = (*i).var;
 					v.stopp = (*i).stopp;
-					r.addData(v);				//添加到寄存器中
+					r.addData(v);							//添加到寄存器中
 					break;
 				}
 			}
-			Regs.push_back(r);					//将新建的寄存器加入向量中
+			Regs.push_back(r);							//将新建的寄存器加入向量中
 		}
 	}
 }
@@ -103,13 +103,13 @@ bool find(std::vector<int> v, int data) {
 
 class Mux {
 private:
-	std::vector<int> mux_inputs;		//选择器连接的所有输入寄存器的下标
-	int mux_selectInput;			//选择的输入数据对应的寄存器
-	int output_compute;			//连接的输出的计算资源
-	int flag;				//0为左边，1为右边
+	std::vector<int> mux_inputs;				//选择器连接的所有输入寄存器的下标
+	int mux_selectInput;						//选择的输入数据对应的寄存器
+	int output_compute;							//连接的输出的计算资源
+	int flag;									//0为左边，1为右边
 
 public:
-	int mux_index;				//选择器下标
+	int mux_index;								//选择器下标
 	Mux() { }
 	Mux(int L_or_R, int _compute, std::vector<computeresource> com) {
 		std::vector<int> inputs;
@@ -135,7 +135,7 @@ public:
 				return true;
 			}
 		}
-		//std::cout << "选择器输入端不包括该寄存器！" << std::endl;
+		std::cout << "选择器输入端不包括该寄存器！" << std::endl;
 		return false;
 	}
 
@@ -201,17 +201,17 @@ public:
 
 struct cycletable {
 	std::string var;	//变量
-	int com;		//变量var活跃期间使用的计算资源
-	int reg;		//使用的寄存器
-	int mux;		//使用的选择器
+	int com;			//变量var活跃期间使用的计算资源
+	int reg;			//使用的寄存器
+	int mux;			//使用的选择器
 };
 
 // 控制器
 class MicrocodeController {
 private:
-	std::vector<Register> Regs;		//所有的寄存器
-	std::vector<Mux> Muxs;			//所有的选择器
-	DataFlowGraph DFG;			//表示当前控制器是处在哪一块中的
+	std::vector<Register> Regs;				//所有的寄存器
+	std::vector<Mux> Muxs;					//所有的选择器
+	DataFlowGraph DFG;						//表示当前控制器是处在哪一块中的
 	std::vector<std::pair<int, int>> CSP;	//计算资源匹配结果
 	std::vector<computeresource> Compute;				
 	std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
@@ -251,7 +251,7 @@ public:
 		int cycle;		//所处周期，遍历使用
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		sort(V.begin(), V.end(), varPeridCmp_stop);
-		int total_cycle = V[V.size() - 1].stopp;	//最后一个变量的终止周期
+		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
 
 		for (cycle = 1; cycle <= total_cycle; cycle++) {
 			//对每个选择器进行遍历，记录其选择的寄存器输入数据到table中
@@ -273,74 +273,74 @@ public:
 	void generateCycles(std::vector<std::pair<std::string, int>> _REG) {
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		sort(V.begin(), V.end(), varPeridCmp_stop);
-		int total_cycle = V[V.size() - 1].stopp;	//最后一个变量的终止周期
+		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
 		std::vector<Cycle> cycle(total_cycle + 1);
 
-		std::vector<node> List = DFG.get_opList();
+		std::vector<node> List = DFG.get_opList();		
+		int num_node = 0;								//标识当前的节点语句
 
-		int size;
-		//对于最后一句话为BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
-		if (List[List.size() - 2].element.getOPtype() == OP_BR) {
-			size = List.size() - 2;
-			if (List[size].element.getInputvars().size() == 3) {
-				Statement statement;
+		for (int i = 1; i < List.size() - 1; i++) {
+			Statement statement;
+			//对于ASSIGN、BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
+			if (List[i].element.getOPtype() == OP_BR) {
+				if (List[i].element.getInputvars().size() == 3) {
+					statement.com = -1;
+					statement.optype = OP_BR;
+					statement.vars = List[i].InputVar;
+					statement.outreg = findregister(_REG, statement.vars[0]);
+
+					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+						cycle[j].Statements.push_back(statement);
+				}
+			}
+			else if (List[i].element.getOPtype() == OP_RET) {
 				statement.com = -1;
-				statement.optype = OP_BR;
-				statement.vars = List[size].InputVar;
+				statement.optype = OP_RET;
+				statement.vars = List[i].InputVar;
 				statement.outreg = findregister(_REG, statement.vars[0]);
 
-				for (int i = List[size].getTstart(); i <= List[size].getTend(); i++)
-					cycle[i].Statements.push_back(statement);
+				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+					cycle[j].Statements.push_back(statement);
 			}
-		}
-		else if (List[List.size() - 2].element.getOPtype() == OP_RET) {
-			size = List.size() - 2;
-			Statement statement;
-			statement.com = -1;
-			statement.optype = OP_RET;
-			statement.vars = List[size].InputVar;
-			statement.outreg = findregister(_REG, statement.vars[0]);
+			else if (List[i].element.getOPtype() == OP_ASSIGN) {
+				statement.com = -1;
+				statement.optype = OP_ASSIGN;
+				statement.vars = List[i].InputVar;
+				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
 
-			for (int i = List[size].getTstart(); i <= List[size].getTend(); i++)
-				cycle[i].Statements.push_back(statement);
-		}
-		else
-			size = List.size() - 1;
-
-		for (int i = 1; i < size; i++) {
-			//对每个OP进行遍历
-			int opType = List[i].element.getOPtype();	//每句话的optype
-			int compute_index;				//每句话绑定的计算资源
-			int reg_return;
-			std::cout << CSP.size() << std::endl;
-			if (CSP.size() == 0) {
-				compute_index = -1;			//每句话绑定的计算资源
-				reg_return = -1;
+				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+					cycle[j].Statements.push_back(statement);
 			}
+			//其他指令，均使用到计算资源
 			else {
-				compute_index = CSP[i-1].second;	//每句话绑定的计算资源
+				//对每个OP进行遍历
+				int opType = List[i].element.getOPtype();	//每句话的optype
+				int compute_index;							//每句话绑定的计算资源
+				int reg_return;
+				compute_index = CSP[num_node].second;		//每句话绑定的计算资源
 				reg_return = Compute[compute_index].outputregister;
-			}
 			
-			std::vector<std::string> inputvars = List[i].InputVar;
-			std::vector<int> regs;
-			Statement statement;
+				std::vector<std::string> inputvars = List[i].InputVar;
+				std::vector<int> regs;
 
-			for (int j = 0; j < inputvars.size(); j++) {
-				int r = findregister(_REG, inputvars[j]);
-				regs.push_back(r);
-			}
+				for (int j = 0; j < inputvars.size(); j++) {
+					int r = findregister(_REG, inputvars[j]);
+					regs.push_back(r);
+				}
 
-			statement.com = compute_index;
-			statement.optype = opType;
-			statement.outreg = reg_return;
-			statement.regs = regs;
-			statement.vars = inputvars;
+				statement.com = compute_index;
+				statement.optype = opType;
+				statement.outreg = reg_return;
+				statement.regs = regs;
+				statement.vars = inputvars;
 
-			for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
-				cycle[l].Statements.push_back(statement);
+				for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
+					cycle[l].Statements.push_back(statement);
+				}
+				num_node++;
 			}
 		}
+
 		C = cycle;
 	}
 
