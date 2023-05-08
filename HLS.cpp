@@ -57,11 +57,7 @@ void HLS::travelaround() {
 				int nextNodeIndex = DFG.ToVertex(CurrentNode)[i];
 				node& nextNode = DFG.get_opList()[nextNodeIndex];
 				// 根据第i个节点的输入变量情况，减少入度
-				for (int k = 0; k < nextNode.InputVar.size(); k++) {
-					if (DFG.myOutvartable().find(nextNode.InputVar[k])!= DFG.myOutvartable().end() && DFG.myOutvartable()[nextNode.InputVar[k]] == CurrentNode) {
-						DFG.InVertex[nextNodeIndex]--;
-					}
-				}
+				DFG.InVertex[nextNodeIndex]--;
 				// 入度小于等于0则进入队列
 				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] <= 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
 					tq.push(DFG.ToVertex(CurrentNode)[i]);

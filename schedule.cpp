@@ -204,13 +204,8 @@ void ASAP(DataFlowGraph& DFG){
 		for (int i = 0; i < DFG.ToVertex(CurrentNode).size(); i++) {
 		// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
 			int nextNodeIndex = DFG.ToVertex(CurrentNode)[i];
-			node& nextNode = DFG.get_opList()[nextNodeIndex];
-		// 根据第i个节点的输入变量情况，减少入度
-		    for (int k = 0; k < nextNode.InputVar.size(); k++) {
-					if (DFG.myOutvartable().find(nextNode.InputVar[k])!= DFG.myOutvartable().end() && DFG.myOutvartable()[nextNode.InputVar[k]] == CurrentNode) {
-						DFG.InVertex[nextNodeIndex]--;
-					}
-		    }
+		    // 根据第i个节点的输入变量情况，减少入度
+            DFG.InVertex[nextNodeIndex]--;
 		    // 入度小于等于0则进入队列
 		    if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] <= 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
 		        tq.push(DFG.ToVertex(CurrentNode)[i]);
@@ -311,11 +306,7 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG){
                         int nextNodeIndex = DFG.ToVertex(index1)[i];
                         node& nextNode = DFG.get_opList()[nextNodeIndex];
                         // 根据第i个节点的输入变量情况，减少入度
-                        for (int k = 0; k < nextNode.InputVar.size(); k++) {
-                            if (DFG.myOutvartable().find(nextNode.InputVar[k]) != DFG.myOutvartable().end() && DFG.myOutvartable()[nextNode.InputVar[k]] == index1) {
-                                DFG.InVertex[nextNodeIndex]--;
-                            }
-                        }
+                        DFG.InVertex[nextNodeIndex]--;
                         // 入度小于等于0则进入队列
                         if (DFG.InVertex[DFG.ToVertex(index1)[i]] <= 0 && DFG.Mark[DFG.ToVertex(index1)[i]] == UNVISITED) {
                             tq_m.insert(std::pair<int,int>(DFG.ToVertex(index1)[i], DFG.get_opList()[DFG.ToVertex(index1)[i]].getTend() - DFG.get_opList()[DFG.ToVertex(index1)[i]].getTstart()));
