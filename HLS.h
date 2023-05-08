@@ -5,6 +5,7 @@
 #include "controlflowgraph.h"
 #include <iostream>
 #include"computeresource.h"
+#include "cycleTable.h"
 
 class HLS {
 private:
@@ -19,6 +20,8 @@ private:
 	std::vector<computeresource> COR;
 	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
 	std::vector<std::vector<std::pair<int, int>>>  CSP;
+	//每个周期的所有需要执行的语句，statement包括输入变量与其对应的寄存器、op的type、绑定的计算资源、输出到的寄存器
+	std::vector<std::vector<Cycle>> Cycles;
 public:
 	HLS(parser& p) : parsered(p) {}
 
