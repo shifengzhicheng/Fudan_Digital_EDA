@@ -292,7 +292,7 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG){
             for(auto itera = tq.begin();itera!=tq.end();itera++){
                 if(meet_resources_constraint(Record,itera->first,DFG)){
                     DFG.get_opList()[itera->first].T_start = current_period;
-                    DFG.get_opList()[itera->first].T_end = current_period;
+                    DFG.get_opList()[itera->first].T_end = current_period + DFG.get_opList()[itera->first].element.getLatency()-1;
                     DFG.Mark[itera->first] = SCHEDULED;
                 }
             }
