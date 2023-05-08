@@ -5,15 +5,12 @@
 #include "Hungarian_algorithm.h"
 #include "dataflowgraph.h"
 
-/********* 如果只需要满足生成verilog代码的需求，实际上Register与Mux结构不太需要使用 *********/
-/******************************** 加在这里可以体现结构 **********************************/
-
 bool varPeridCmp_stop(varPeriod a, varPeriod b)
 {
 	return a.stopp < b.stopp;
 }
 
-/********* 将ryh生成的寄存器用类表示 *********/
+/********************************** ryh的leftAlgorithm中的结构，到时候要删掉 **************************************/
 class Register {
 private:
 	varPeriod now_reg_data;						//寄存器中当前存储的变量
@@ -278,18 +275,45 @@ public:
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		sort(V.begin(), V.end(), varPeridCmp_stop);
 		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
-		std::vector<Cycle> cycle(total_cycle);
+		std::vector<Cycle> cycle(total_cycle + 1);
 
 		std::vector<node> List = DFG.get_opList();
-		//		std::cout << List.size() << std::endl;
 
-		for (int i = 1; i < List.size() - 2; i++) {
-			std::cout << List.size() << std::endl;
+		int size;
+		//对于最后一句话为BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
+		if (List[List.size() - 2].element.getOPtype() == OP_BR) {
+			size = List.size() - 2;
+			if (List[size].element.getInputvars().size() == 3) {
+				Statement statement;
+				statement.com = -1;
+				statement.optype = OP_BR;
+				statement.vars = List[size].InputVar;
+				statement.outreg = findregister(_REG, statement.vars[0]);
+
+				for (int i = List[size].getTstart(); i <= List[size].getTend(); i++)
+					cycle[i].Statements.push_back(statement);
+			}
+		}
+		else if (List[List.size() - 2].element.getOPtype() == OP_RET) {
+			size = List.size() - 2;
+			Statement statement;
+			statement.com = -1;
+			statement.optype = OP_RET;
+			statement.vars = List[size].InputVar;
+			statement.outreg = findregister(_REG, statement.vars[0]);
+
+			for (int i = List[size].getTstart(); i <= List[size].getTend(); i++)
+				cycle[i].Statements.push_back(statement);
+		}
+		else
+			size = List.size() - 1;
+
+		for (int i = 1; i < size; i++) {
 			//对每个OP进行遍历
 			int opType = List[i].element.getOPtype();					//每句话的optype
-			std::cout << CSP.size() << std::endl;
 			int compute_index;						//每句话绑定的计算资源
 			int reg_return;
+			std::cout << CSP.size() << std::endl;
 			if (CSP.size() == 0) {
 				compute_index = -1;						//每句话绑定的计算资源
 				reg_return = -1;
