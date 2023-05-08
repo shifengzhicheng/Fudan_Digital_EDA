@@ -131,7 +131,8 @@ enum CONDTYPE {
 
 enum IsVISITED {
 	UNVISITED,
-	VISITED
+	VISITED,
+	SCHEDULED
 };
 
 struct InputEdge {
@@ -213,7 +214,7 @@ class DataFlowGraph {
 		// CreateGraph
 		// 
 		// 用于标记节点是否被访问
-		std::vector<bool> Mark;
+		std::vector<int> Mark;
 		// 用于标记节点当前的入度，为0表示可以被直接访问
 		std::vector<int> InVertex;
 		// 用于标记节点当前的出度

@@ -186,7 +186,7 @@ DataFlowGraph::DataFlowGraph(basic_block& bb) {
 void DataFlowGraph::Initialize() {
     InVertex = std::vector<int>(get_opList().size());
     OutVertex = std::vector<int>(get_opList().size());
-    Mark = std::vector<bool>(get_opList().size(), UNVISITED);
+    Mark = std::vector<int>(get_opList().size(), UNVISITED);
     for (int i = 0; i < get_opList().size(); i++) {
         if (get_opList()[i].element.getOPtype() != OP_PHI) {
             for (auto Var : get_opList()[i].InputVar) {
