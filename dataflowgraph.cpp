@@ -193,7 +193,6 @@ void DataFlowGraph::Initialize() {
                 if (ispureNumber(Var)) continue;
                 InVertex[i]++;
             }
-            
         }
         else {
             InVertex[i] = 1;

@@ -4,30 +4,24 @@
 #include "unordered_map"
 // 操作周期宏定义
 constexpr auto  T_ASSIGN = 1;  // 赋值操作;
-constexpr auto	T_ADD = 1;     // 加法操作
-constexpr auto	T_SUB = 1;    // 减法操作
-constexpr auto	T_MUL = 1;    // 乘法操作
-constexpr auto  T_DIV = 1;// 除法操作
-constexpr auto	T_LOAD = 1;// 载入操作
-constexpr auto	T_STORE = 1;  // 存储操作
+constexpr auto	T_ADD = 2;     // 加法操作
+constexpr auto	T_SUB = 2;    // 减法操作
+constexpr auto	T_MUL = 5;    // 乘法操作
+constexpr auto  T_DIV = 40;// 除法操作
+constexpr auto	T_LOAD = 3;// 载入操作
+constexpr auto	T_STORE = 3;  // 存储操作
 constexpr auto	T_BR = 1;   // 分支操作
-constexpr auto	T_LT = 1;   // 小于操作
-constexpr auto	T_GT = 1;   // 大于操作
-constexpr auto	T_LE = 1;   // 小于等于操作
-constexpr auto	T_GE = 1;    // 大于等于操作
-constexpr auto	T_EQ = 1;   // 等于操作
-constexpr auto	T_PHI = 1;  // Phi 操作
+constexpr auto	T_LT = 2;   // 小于操作
+constexpr auto	T_GT = 2;   // 大于操作
+constexpr auto	T_LE = 2;   // 小于等于操作
+constexpr auto	T_GE = 2;    // 大于等于操作
+constexpr auto	T_EQ = 2;   // 等于操作
+constexpr auto	T_PHI = 2;  // Phi 操作
 constexpr auto	T_RET = 1;     // 返回操作
 
 
 class HardwareConstraints {
 	public:
-		int getLatency(const int type) {
-			return latencies[type];
-		}
-		void setLatency(const int type, int latency) {
-			latencies[type] = latency;
-		}
 		int getcount(const int type) {
 			return counts[type];
 		}
@@ -36,7 +30,6 @@ class HardwareConstraints {
 		}
 	private:
 		// 硬件约束，操作延时以及硬件资源约束
-		std::unordered_map<int, int> latencies;
 		std::unordered_map<int, int> counts;
 };
 

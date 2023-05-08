@@ -149,6 +149,35 @@ void HLS::synthesize_control_logic() {
 	}
 }
 
+void HLS::genFSM()
+{
+	outputFSM = FSMachine(CFG);
+}
+
+void HLS::outputfile() {
+	std::string filename = outputFSM.getFilename();
+	std::vector<std::string>& modulepart = outputFSM.getModule();
+	std::vector<std::string>& FSMpart = outputFSM.getFSM();
+	std::ofstream output_file(std::string(filename + ".v"));
+	// 检查文件是否成功打开
+	if (!output_file.is_open()) {
+		std::cerr << "Failed to open output file!" << std::endl;
+		return;
+	}
+
+	// 将每一行写入文件
+	for (const auto& line : modulepart) {
+		output_file << line << std::endl;
+	}
+
+	for (const auto& line : FSMpart) {
+		output_file << line << std::endl;
+	}
+	output_file << "endmodule" << std::endl;
+	// 关闭文件
+	output_file.close();
+}
+
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
 /* 这个部分接收第一部分生成的图graph进行拓扑排序，包括带周期的ASAP和带周期的ALAP，
   这部分信息将被存储在图的每个节点中 */

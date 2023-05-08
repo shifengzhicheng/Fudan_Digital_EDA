@@ -124,7 +124,6 @@ void table_schedule(ControlFlowGraph& CFG){
 		// 图初始化
 		DFG.Initialize();
 		// 压入所有入度为0的节点
-		int CurrentNode;
 		std::vector<int> tq;
 		for (int i = 0; i < DFG.get_opList().size(); i++) {
 			if (DFG.InVertex[i] == 0) {

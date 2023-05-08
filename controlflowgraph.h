@@ -18,6 +18,8 @@ class ControlFlowGraph {
 		std::unordered_map<std::string, int> IndexofDFG;
 		// DFG节点向量，装了所有的DFG，其中，DFGs[0]是一个空的DFG，它的作用是传函数的输入变量
 		std::vector<graph_node> DFGs;
+		// 寻找变量的生成块
+		DataFlowGraph* findvarfrom(std::string VarName);
 	public:
 
 		// CFG图的创建
@@ -34,9 +36,16 @@ class ControlFlowGraph {
 		std::vector<int> NextNode(std::string label);
 
 		std::vector<int> NextNode(int index);
-
-		// 寻找变量的生成块
-		DataFlowGraph* findvarfrom(std::string VarName);
+		// 返回信息的接口
+		std::string getfuncname() {
+			return func_name;
+		}
+		std::vector<var> &getvar() {
+			return vars;
+		}
+		int getRet_type() const {
+			return ret_type;
+		}
 
 };
 
