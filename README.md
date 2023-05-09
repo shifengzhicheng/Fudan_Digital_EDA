@@ -173,7 +173,7 @@ ret:
 	void perform_calculate_allocation_and_binding();
 	// 控制逻辑综合方法
 	void synthesize_control_logic();
-    // 生成状态机
+    	// 生成状态机
 	void genFSM();
 	// 输出verilog文件
 	void outputfile();
