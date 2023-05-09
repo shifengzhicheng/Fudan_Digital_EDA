@@ -437,7 +437,8 @@ void HLS::generate_CFG() {
 
 ### Part 5完成控制逻辑综合
 
-这部分由周翔同学完成
+这部分由周翔同学完成。
+
 `├── cycleTable.h `
 
 `├── control_logic.h `
@@ -481,7 +482,7 @@ public:
 
 经过小组讨论，Register类与Mux类仅用于表示连接的结构，可以反映门级连接，但实际上完成PJ的要求是生成RTL代码，并不需要使用到上述两个类。
 
-#####最后是控制器类
+##### 最后是控制器类
 
 ```c++
 public:
@@ -510,7 +511,7 @@ struct Statement {
 
 `std::vector<Cycle> getCycle()`：用于返回最终生成的周期表`std::vector<Cycle> C`。
 
-#####其他函数
+##### 其他函数
 
 ```c++
 void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, 
@@ -519,7 +520,7 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 
 这一函数用于将任钰浩同学的寄存器绑定结果`vector<pair<string, int>>` 结构转化成`vector<Register>`结构。
 
-####技术细节
+#### 技术细节
 
 1. 在`chooseRegs()`与`generateCycles()`函数的编写时，比较容易出现堆栈溢出的问题，这就需要判断每个块内是否真正使用了相应的硬件资源。
 2. 为了方便生成Verilog代码的工作，创建了一个Cycle结构，里面存放着对应周期执行的所有操作信息，并且保存了STORE、RET等操作的输出情况。
