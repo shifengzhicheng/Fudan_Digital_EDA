@@ -15,7 +15,7 @@
 | 邱峻蓬   |             |
 | 任钰浩   |             |
 | 沈笑涵   | 20307130063 |
-| 周翔     |             |
+| 周翔     | 20307130188 |
 
 
 
@@ -335,11 +335,21 @@ void HLS::generate_CFG() {
 ### Part 3完成寄存器的绑定
 
 ### Part 4完成计算资源的绑定
-
-此部分由沈笑涵同学完成。
-
+####
+此部分由沈笑涵同学完成
+##### 函数及文件说明
+`├── HLS.h `
+```c++
+	//计算资源（包括加法器、乘法器和除法器）
+	std::vector<computeresource> COR;
+	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
+	std::vector<std::vector<std::pair<int, int>>>  CSP;
+```
+`├── HLS.cpp `
+```c++
+	void HLS::perform_calculate_allocation_and_binding();
+```
 `├── computeresource.h `
-
 `├── Hungarian_alogrithm.h `
 
 #### 计算资源类的定义
@@ -401,8 +411,6 @@ void HLS::generate_CFG() {
 ```
 #### 实现将块内node结点与计算资源的绑定
 
-#### 技术细节
-
 本部分使用了hls.h中各块内的寄存器与变量的绑定结果REG、和各块DFG中存储node计算结点的opList信息。
 
 其基本思想是Latency约束下的最小资源约束，通过逐个遍历opList中的node信息和对应输入输出变量的寄存器绑定结果，按照应该使用的计算资源类别和输出寄存器编号进行划分，并按照优化目标——输入寄存器的硬件复杂程度最低的标准（即计算资源输入端数据选择器数据选择端数目最低）进行计算资源与计算节点的绑定，并完成输入寄存器的绑定。
@@ -413,13 +421,13 @@ void HLS::generate_CFG() {
 	std::vector<std::vector<std::pair<int, int>>>  CSP;
 ```
 
-函数接口：
+##### 函数接口：
 ```c++
 	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE) 
 ```
-函数实现思路：
+##### 技术细节：
 
-1.	对每个DFG块中的node结点的optype进行划分，optype = 3(乘法运算)匹配乘法器，optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
+1.	对每个DFG块中的node结点的Optype进行划分，赋值操作不分配计算资源（Optype = 0），0ptype = 3(乘法运算)匹配乘法器，Optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有Optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
 
 2.	对按计算资源分类后的node结点，优先匹配已经实例化的空闲计算资源。通过遍历COR中计算资源信息，判断计算资源输出寄存器是否符合该node输出变量分配的寄存器，并同时进行时序判断。若实现匹配，则进入计算资源输入端绑定寄存器步骤；若无符合条件计算资源匹配，则增加相应计算资源。 
 
