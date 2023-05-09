@@ -181,6 +181,7 @@ int max(int a,int b){
     }
 }
 
+
 //ASAP结果临时存在node类的T_start中
 void ASAP(DataFlowGraph& DFG){
     int lamda = 0;          //lamda标记该DFG调度的最长周期
@@ -188,10 +189,23 @@ void ASAP(DataFlowGraph& DFG){
 		// 压入所有入度为0的节点
 	int CurrentNode;
 	std::queue<int> tq;
+
+    //在0周期由于数据结构先独立对虚节点进行处理
+    DFG.get_opList()[0].setTstart(0);
+    DFG.Mark[0] = VISITED;
+    for (int i = 0; i < DFG.ToVertex(0).size(); i++) {
+		// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
+			int nextNodeIndex = DFG.ToVertex(0)[i];
+		    // 根据第i个节点的输入变量情况，减少入度
+            DFG.InVertex[nextNodeIndex]--;
+    }
+
+//开始对DFG进行调度
+
 	for (int i = 0; i < DFG.get_opList().size(); i++) {
-		if (DFG.InVertex[i] == 0) {
+		if (DFG.InVertex[i] == 0 && DFG.Mark[i] == UNVISITED) {
 			tq.push(i);
-            DFG.get_opList()[i].setTstart(0);          //设置该DFG开始调度的起始周期为第0周期
+            DFG.get_opList()[i].setTstart(1);          //设置该DFG开始调度的起始周期为第1周期
 		}
 	}
 	// 拓扑排序遍历
@@ -226,6 +240,7 @@ void ALAP(DataFlowGraph& DFG){
 		// 压入所有入度为0的节点
 		int CurrentNode;
 		std::queue<int> tq;
+        
 		for (int i = 0; i < DFG.get_opList().size(); i++) {
 			if (DFG.OutVertex[i] == 0) {
 				tq.push(i);
@@ -266,16 +281,28 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG){
     struct Hardware hardware_standard;
     std::map<int,struct Hardware> Record;
 
-    //调度开始的周期初始化为第0周期
-    int current_period = 0;
+    //调度开始的周期初始化为第1周期
+    int current_period = 1;
 
 	DFG.Initialize();
 	// 压入所有入度为0的节点
 	int CurrentNode;
-    std::map<int, int> tq_m;
-	                               //第一个int存的是op的索引，第二个int存的是该操作被ASAP和ALAP调度的周期差
+    std::map<int, int> tq_m;     //第一个int存的是op的索引，第二个int存的是该操作被ASAP和ALAP调度的周期差
+
+    //在0周期由于数据结构先独立对虚节点进行处理
+    DFG.get_opList()[0].setTstart(0);
+    DFG.Mark[0] = VISITED;
+    for (int i = 0; i < DFG.ToVertex(0).size(); i++) {
+		// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
+			int nextNodeIndex = DFG.ToVertex(0)[i];
+		    // 根据第i个节点的输入变量情况，减少入度
+            DFG.InVertex[nextNodeIndex]--;
+    }
+    
+    //开始对DFG进行调度
+
 	for (int i = 0; i < DFG.get_opList().size(); i++) {
-		if (DFG.InVertex[i] == 0) {
+		if (DFG.InVertex[i] == 0 && DFG.Mark[i] == UNVISITED) {
 			tq_m.insert(std::pair<int,int>(i,DFG.get_opList()[i].getTend() - DFG.get_opList()[i].getTstart()));
             DFG.Mark[i] = VISITED;
 		}
