@@ -335,14 +335,13 @@ void HLS::generate_CFG() {
 ### Part 3完成寄存器的绑定
 
 ### Part 4完成计算资源的绑定
-####
-此部分由沈笑涵同学完成
 
+此部分由沈笑涵同学完成。
 本部分使用了hls.h中各块内的寄存器与变量的绑定结果REG、和各块DFG中存储node计算结点的opList信息。
 
 其基本思想是Latency约束下的最小资源约束，通过逐个遍历opList中的node信息和对应输入输出变量的寄存器绑定结果，按照应该使用的计算资源类别和输出寄存器编号进行划分，并按照优化目标——输入寄存器的硬件复杂程度最低的标准（即计算资源输入端数据选择器数据选择端数目最低）进行计算资源与计算节点的绑定，并完成输入寄存器的绑定。
 
-##### 函数及文件说明
+#### 函数及文件说明
 `├── HLS.h `
 ```c++
 	//计算资源（包括加法器、乘法器和除法器）
@@ -357,7 +356,7 @@ void HLS::generate_CFG() {
 `├── computeresource.h `
 `├── Hungarian_alogrithm.h `
 
-#### 计算资源类的定义
+##### 计算资源类的定义
 
 该部分完成了绑定的计算资源的基本信息的说明，包括计算资源的类别、输入端绑定寄存器、输出端绑定寄存器、以及相关绑定操作的方法定义
 ```c++
@@ -402,7 +401,7 @@ void HLS::generate_CFG() {
 
 `int outputregister`：一般来说，计算资源输出端仅绑定一个输出寄存器。因此在定义计算资源时，输出端寄存器用一个int变量存储（这可以用来作为判定计算资源是否可以绑定某一计算结点的依据）。
 
-#### 查找每一个块中计算结点node与寄存器绑定结果
+##### 查找每一个块中计算结点node与寄存器绑定结果
 
 该部分完成了对每一个DFG中的node结点和寄存器绑定结果的提取，以及该块内的寄存器绑定结果的查找，可以实现通过输入变量名查找绑定的寄存器编号
 
@@ -414,7 +413,7 @@ void HLS::generate_CFG() {
 	//该函数完成了通过输入变量名和DFG块寄存器绑定结果，实现块内寄存器绑定结果的查找
 	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val);
 ```
-#### 实现将块内node结点与计算资源的绑定
+##### 实现将块内node结点与计算资源的绑定
 
 该计算资源的实例化结果和绑定结果分别存储在hls.h中新定义的两个变量中
 ```c++
@@ -426,9 +425,9 @@ void HLS::generate_CFG() {
 ```c++
 	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE) 
 ```
-##### 技术细节：
+#### 技术细节：
 
-1.	对每个DFG块中的node结点的Optype进行划分，赋值操作不分配计算资源（Optype = 0），0ptype = 3(乘法运算)匹配乘法器，Optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有Optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
+1.	对每个DFG块中的node结点的Optype进行划分，赋值操作不分配计算资源（Optype = 0），Optype = 3(乘法运算)匹配乘法器，Optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有Optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
 
 2.	对按计算资源分类后的node结点，优先匹配已经实例化的空闲计算资源。通过遍历COR中计算资源信息，判断计算资源输出寄存器是否符合该node输出变量分配的寄存器，并同时进行时序判断。若实现匹配，则进入计算资源输入端绑定寄存器步骤；若无符合条件计算资源匹配，则增加相应计算资源。 
 
@@ -437,6 +436,93 @@ void HLS::generate_CFG() {
 4.	完成每个块内的计算资源绑定后，将最终的计算资源实例化结果和计算资源绑定结果依次push_back，并最终赋值给最终结果COR和CSP中。
 
 ### Part 5完成控制逻辑综合
+
+这部分由周翔同学完成
+`├── cycleTable.h `
+
+`├── control_logic.h `
+
+#### 函数及文件说明
+
+```c++
+// 控制逻辑综合方法
+	void synthesize_control_logic();
+```
+
+这个函数利用周期调度、寄存器绑定以及计算资源绑定的结果，汇总每个块、每个周期下运行的所有操作语句`std::vector<Statement>`。其中`Statement`是一个结构体，记录下了对应语句的信息（在后面说明）。
+
+##### 首先是寄存器Register类
+
+```c++
+public:
+	//寄存器的下标，与任钰浩的pair的索引值相对应
+	int reg_index;
+	// data中会存储当前周期下寄存器存储的值
+	bool getData(int cycle, varPeriod& data)；
+```
+
+其中，`varPeriod`是任钰浩同学定义的一个结构，内含变量名`var`、变量起始活跃时间`startp`与终止活跃时间`stopp`。
+
+`bool getData(int cycle, varPeriod& data)`：输入周期数cycle，通过遍历寄存器中存储的所有变量对应的活跃周期，选择出该周期下该寄存器存储的变量名（包含在data中）。
+
+##### 然后是选择器Mux类
+
+```c++
+public:
+	int mux_index;                //选择器下标
+	bool chooseReg(int cycle, DataFlowGraph dfg, std::vector<Register> REGs,
+	  std::vector<std::pair<std::string, int>> REGi,
+	  std::vector<std::pair<int, int>> CSP,
+	  std::vector<computeresource> com,
+	  Register& reg, std::string& _var)；
+```
+
+`bool chooseReg（）`：默认`reg`下标为-1、`_var`为`NULL`作为未找到的结果。挑选出当前周期cycle、当前模块dfg下，选择器输入端所选取的寄存器reg，以及寄存器中存储的变量_var。这里要注意的是在不同块中活跃的寄存器可能不同，如果直接访问将会导致溢出错误，因此需要先结合寄存器绑定结果REGi，挑选出当前块中会使用到的所有寄存器编号，记为`std::vector<int> curDFGinput;`。之后，利用Register类的`getData()`函数判断当前周期寄存器`i`是否存有数据（记为`v`）。如果存有数据，由于一个寄存器可能会与多个计算资源相连，无法保证`v`一定是在选择器连接的计算资源中被使用的，因此还需要结合计算资源绑定结果，找到相关周期的节点语句node进行判断，得到最后的结果。
+
+经过小组讨论，Register类与Mux类仅用于表示连接的结构，可以反映门级连接，但实际上完成PJ的要求是生成RTL代码，并不需要使用到上述两个类。
+
+#####最后是控制器类
+
+```c++
+public:
+	void generateCycles(std::vector<std::pair<std::string, int>> _REG)；
+	std::vector<Cycle> getCycle()；
+```
+
+其中，`Cycle`是一个结构，定义如下：
+
+```c++
+struct Cycle {
+	std::vector<Statement> Statements;
+};
+struct Statement {
+	std::vector<std::string> vars;  //输入变量名
+	std::vector<int> regs;          //变量对应的寄存器编号
+	int optype;                     //操作类型
+	int compute_resource_index;     //绑定的计算资源标号
+	int outreg;                     //传出的寄存器编号
+	std::vector<std::string> label; //为phi操作而设，记录数据来自哪一个块
+};
+```
+
+`void generateCycles(std::vector<std::pair<std::string, int>> _REG)`：根据寄存器绑定、计算资源绑定结果，生成一个向量`std::vector<Cycle> C;`，`C[i]`对应周期`i`执行的所有`Statement`。这里需要注意的点是，首先要确定`C`的大小，由于郑志宇同学的`node`列表中第一个节点为虚节点，不会执行操作，因此应该将`C`的大小设置为总周期数加一，`C[0]`中不含任何`Statament`。
+另外，`node`节点包含沈笑涵同学的计算资源绑定结果，以及不使用计算资源的节点。后者需要特别处理，否则会报溢出错误。
+
+`std::vector<Cycle> getCycle()`：用于返回最终生成的周期表`std::vector<Cycle> C`。
+
+#####其他函数
+
+```c++
+void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, 
+                    std::vector<Register>& Regs)
+```
+
+这一函数用于将任钰浩同学的寄存器绑定结果`vector<pair<string, int>>` 结构转化成`vector<Register>`结构。
+
+####技术细节
+
+1. 在`chooseRegs()`与`generateCycles()`函数的编写时，比较容易出现堆栈溢出的问题，这就需要判断每个块内是否真正使用了相应的硬件资源。
+2. 为了方便生成Verilog代码的工作，创建了一个Cycle结构，里面存放着对应周期执行的所有操作信息，并且保存了STORE、RET等操作的输出情况。
 
 ### Part 6生成`Verilog`代码
 
