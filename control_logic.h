@@ -281,7 +281,7 @@ public:
 
 		for (int i = 1; i < List.size() - 1; i++) {
 			Statement statement;
-			//对于ASSIGN、BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
+			//对于ASSIGN、BR、RET、LOAD、STORE指令，需要得到其传出的寄存器编号，因此另外处理
 			if (List[i].element.getOPtype() == OP_BR) {
 				if (List[i].element.getInputvars().size() == 3) {
 					statement.com = -1;
@@ -308,6 +308,34 @@ public:
 				statement.vars = List[i].InputVar;
 				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
 
+				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+					cycle[j].Statements.push_back(statement);
+			}
+			else if (List[i].element.getOPtype() == OP_LOAD) {
+				statement.com = -1;
+				statement.optype = OP_LOAD;
+				statement.vars = List[i].InputVar;
+				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
+
+				for (int j = 0; j < statement.vars.size(); j++) {
+					int r = findregister(_REG, statement.vars[j]);
+					statement.regs.push_back(r);
+				}
+				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+					cycle[j].Statements.push_back(statement);
+			}
+			//store: 将数据存储到数组：如store(a, 10, c)，将c存储到a[10]
+			//因此statement设置的输入为a、10，输出的寄存器为c所存的寄存器
+			else if (List[i].element.getOPtype() == OP_STORE) {
+				statement.com = -1;
+				statement.optype = OP_STORE;
+				statement.outreg = findregister(_REG, List[i].InputVar[2]);
+
+				for (int j = 0; j < List[i].InputVar.size() - 1; j++) {
+					statement.vars.push_back(List[i].InputVar[j]);
+					int r = findregister(_REG, List[i].InputVar[j]);
+					statement.regs.push_back(r);
+				}
 				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
 					cycle[j].Statements.push_back(statement);
 			}
@@ -340,7 +368,6 @@ public:
 				num_node++;
 			}
 		}
-
 		C = cycle;
 	}
 
