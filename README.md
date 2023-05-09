@@ -335,6 +335,7 @@ void HLS::generate_CFG() {
 ### Part 4完成计算资源的绑定
 ####
 此部分由沈笑涵同学完成
+
 `├── computeresource.h `
 `├── Hungarian_alogrithm.h `
 #### 计算资源类的定义
@@ -378,9 +379,9 @@ void HLS::generate_CFG() {
 ```
 主要介绍一些定义的想法：
 
-`std::vector<int> Ainputregisters`：计算资源输入端绑定的寄存器一般不止一个，因此通过vector存储；
+`std::vector<int> Ainputregisters`：计算资源输入端绑定的寄存器一般不止一个，因此通过vector向量存储；
 
-`int outputregister`：一般来说，计算资源输出端仅绑定一个输出寄存器，因此在定义计算资源时，输出端寄存器用一个int变量存储。
+`int outputregister`：一般来说，计算资源输出端仅绑定一个输出寄存器。因此在定义计算资源时，输出端寄存器用一个int变量存储（这可以用来作为判定计算资源是否可以绑定某一计算结点的依据）。
 
 #### 查找每一个块中计算结点node与寄存器绑定结果
 
@@ -392,12 +393,35 @@ void HLS::generate_CFG() {
 	
 	//实现块内寄存器绑定结果的查找
 	//该函数完成了通过输入变量名和DFG块寄存器绑定结果，实现块内寄存器绑定结果的查找
-	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val)
+	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val);
 ```
 #### 实现将块内node结点与计算资源的绑定
 
+技术细节：
 
+本部分使用了hls.h中各块内的寄存器与变量的绑定结果REG、和各块DFG中存储node计算结点的opList信息。
 
+其基本思想是Latency约束下的最小资源约束，通过逐个遍历opList中的node信息和对应输入输出变量的寄存器绑定结果，按照应该使用的计算资源类别和输出寄存器编号进行划分，并按照优化目标——输入寄存器的硬件复杂程度最低的标准（即计算资源输入端数据选择器数据选择端数目最低）进行计算资源与计算节点的绑定，并完成输入寄存器的绑定。
+
+该计算资源的实例化结果和绑定结果分别存储在hls.h中新定义的两个变量中
+```c++
+	std::vector<computeresource> COR;
+	std::vector<std::vector<std::pair<int, int>>>  CSP;
+```
+
+函数接口：
+```c++
+	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE) 
+```
+函数实现思路：
+
+1.	对每个DFG块中的node结点的optype进行划分，optype = 3(乘法运算)匹配乘法器，optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
+
+2.	对按计算资源分类后的node结点，优先匹配已经实例化的空闲计算资源。通过遍历COR中计算资源信息，判断计算资源输出寄存器是否符合该node输出变量分配的寄存器，并同时进行时序判断。若实现匹配，则进入计算资源输入端绑定寄存器步骤；若无符合条件计算资源匹配，则增加相应计算资源。 
+
+3.	对绑定的计算资源的输入端进行输入寄存器绑定。其中由于除法运算本身两变量存在差异（除数与被除数），因此对应计算资源左输入端和右输入端并不对称。而对于加法器和乘法器，优先判断其输入寄存器是否已经与该计算资源匹配，若未完全匹配，则按照代价最低原则（硬件电路的复杂度最低）将其输入寄存器与计算资源输入端进行绑定。
+
+4.	完成每个块内的计算资源绑定后，将最终的计算资源实例化结果和计算资源绑定结果依次push_back，并最终赋值给最终结果COR和CSP中。
 
 ### Part 5完成控制逻辑综合
 
