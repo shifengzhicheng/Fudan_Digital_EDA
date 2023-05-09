@@ -14,7 +14,7 @@
 | 郑志宇   | 20307130176 |
 | 邱峻蓬   |             |
 | 任钰浩   |             |
-| 沈笑涵   |             |
+| 沈笑涵   | 20307130063 |
 | 周翔     |             |
 
 
@@ -333,6 +333,71 @@ void HLS::generate_CFG() {
 ### Part 3完成寄存器的绑定
 
 ### Part 4完成计算资源的绑定
+####
+此部分由沈笑涵同学完成
+`├── computeresource.h `
+`├── Hungarian_alogrithm.h `
+#### 计算资源类的定义
+
+该部分完成了绑定的计算资源的基本信息的说明，包括计算资源的类别、输入端绑定寄存器、输出端绑定寄存器、以及相关绑定操作的方法定义
+```c++
+	class computeresource{
+		//声明计算资源是加法器or乘法器or除法器
+		int flag;
+		//左边输入寄存器
+		std::vector<int> Ainputregisters;
+		//右边输入寄存器
+		std::vector<int> Binputregisters;
+		//输出寄存器
+		int outputregister;
+		//构造函数
+		computeresource(int flag1, int outputreg);
+		//绑定计算资源左输入寄存器
+		void setinputAregisters(int reg) {
+			Ainputregisters.push_back(reg);
+		}
+		//绑定计算资源右输入寄存器
+		void setinputBregisters(int reg) {
+			Binputregisters.push_back(reg);
+		}
+		//绑定计算资源输出寄存器
+		void setoutputregister(int reg) {
+			if (outputregister != -1) {
+				//std::cout << "output register has already set! error" << std::endl;
+				return;
+			}
+			else {
+				outputregister = reg;
+			}
+		}
+		//查找计算资源左输入端绑定寄存器
+		bool findareg(int reg);
+		//查找计算资源右输入端绑定寄存器
+		bool findbreg(int reg);
+	}
+```
+主要介绍一些定义的想法：
+
+`std::vector<int> Ainputregisters`：计算资源输入端绑定的寄存器一般不止一个，因此通过vector存储；
+
+`int outputregister`：一般来说，计算资源输出端仅绑定一个输出寄存器，因此在定义计算资源时，输出端寄存器用一个int变量存储。
+
+#### 查找每一个块中计算结点node与寄存器绑定结果
+
+该部分完成了对每一个DFG中的node结点和寄存器绑定结果的提取，以及该块内的寄存器绑定结果的查找，可以实现通过输入变量名查找绑定的寄存器编号
+
+```c++
+	//提取每一个DFG中的node结点
+	std::vector<graph_node> DFGS = CFG.getDFGNodes();
+	
+	//实现块内寄存器绑定结果的查找
+	//该函数完成了通过输入变量名和DFG块寄存器绑定结果，实现块内寄存器绑定结果的查找
+	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val)
+```
+#### 实现将块内node结点与计算资源的绑定
+
+
+
 
 ### Part 5完成控制逻辑综合
 
