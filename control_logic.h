@@ -31,7 +31,12 @@ public:
 		}
 		return false;
 	}
-
+	
+	// 将变量存入寄存器中（添加存储的数据）
+	void addData(varPeriod var) {
+		all_reg_datas.push_back(var);
+	}
+	
 	// 返回该寄存器在不同周期会存储的所有变量
 	std::vector<varPeriod> getAllDatas() {
 		return all_reg_datas;
