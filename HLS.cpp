@@ -1,4 +1,4 @@
-#include "HLS.h"
+﻿#include "HLS.h"
 #include "leftAlgorithm.h"
 #include "schedule.h"
 #include "Hungarian_algorithm.h"
@@ -13,6 +13,9 @@
   然后get_oprand(k)得到第k个操作数(从0开始)
   最后这个操作将整个函数变成一个完整的，因为循环存在，图是有环的
   但因为phi操作代表的依赖是或关系，而且中间存在branch */
+void HLS::generate_rtl_operations() const
+{
+}
 void HLS::generate_CFG() {
 	// 通过IR生成数据流图以及控制流图
 	CFG = ControlFlowGraph(parsered);
@@ -148,13 +151,15 @@ void HLS::synthesize_control_logic() {
 
 void HLS::genFSM()
 {
-	outputFSM = FSMachine(CFG);
+	outputFSM = FSMachine(CFG, Cycles);
 }
 
 void HLS::outputfile() {
 	std::string filename = outputFSM.getFilename();
 	std::vector<std::string>& modulepart = outputFSM.getModule();
 	std::vector<std::string>& FSMpart = outputFSM.getFSM();
+	std::vector<std::string>& Counterpart = outputFSM.getCounter();
+	std::vector<std::string>& perPeriodPart = outputFSM.getPerPeriod();
 	std::ofstream output_file(std::string(filename + ".v"));
 	// 检查文件是否成功打开
 	if (!output_file.is_open()) {
@@ -168,6 +173,14 @@ void HLS::outputfile() {
 	}
 
 	for (const auto& line : FSMpart) {
+		output_file << line << std::endl;
+	}
+
+	for (const auto& line : Counterpart) {
+		output_file << line << std::endl;
+	}
+
+	for (const auto& line : perPeriodPart) {
 		output_file << line << std::endl;
 	}
 	output_file << "endmodule" << std::endl;
