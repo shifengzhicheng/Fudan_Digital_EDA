@@ -32,23 +32,6 @@ public:
 		return false;
 	}
 
-	// 设置当前寄存器中存储的值
-	bool setData(varPeriod data) {
-		for (std::vector<varPeriod>::iterator iter = all_reg_datas.begin(); iter != all_reg_datas.end(); iter++) {
-			if ((*iter).var == data.var) {
-				now_reg_data = data;
-				return true;
-			}
-		}
-		std::cout << "寄存器中没有存储过该变量！" << std::endl;
-		return false;
-	}
-
-	// 将变量存入寄存器中（添加存储的数据）
-	void addData(varPeriod var) {
-		all_reg_datas.push_back(var);
-	}
-
 	// 返回该寄存器在不同周期会存储的所有变量
 	std::vector<varPeriod> getAllDatas() {
 		return all_reg_datas;
@@ -56,7 +39,7 @@ public:
 };
 
 // 将ryh的pair结构转换为寄存器类
-void Pair2Register(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
+void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
 	std::vector<varPeriod> varPeriods = graph2VarPeriods(DFG);
 	for (std::vector<std::pair<std::string, int>>::iterator iter = REG.begin(); iter != REG.end(); iter++) {
 		int flag = 0;			//用于表示是否已经添加过该寄存器
@@ -118,7 +101,7 @@ public:
 		if (flag == 0)
 			inputs = com[output_compute].Ainputregisters;
 		else
-			inputs = com[output_compute].Binputregisters;
+			inputs = com[output_compute].Binputregisters;	
 		mux_inputs = inputs;
 	}
 
@@ -139,11 +122,6 @@ public:
 		return false;
 	}
 
-	//获取选择的输入寄存器下标
-	int getInput() {
-		return mux_selectInput;
-	}
-
 	//获取所有的输入寄存器下标
 	std::vector<int> getAllInput() {
 		return mux_inputs;
@@ -155,15 +133,15 @@ public:
 	}
 
 	bool chooseReg(int cycle, DataFlowGraph dfg, std::vector<Register> REGs,
-		std::vector<std::pair<std::string, int>> REGi,
-		std::vector<std::pair<int, int>> CSP,
-		std::vector<computeresource> com,
-		Register& reg, std::string& _var) {
+				std::vector<std::pair<std::string, int>> REGi,
+				std::vector<std::pair<int, int>> CSP,
+				std::vector<computeresource> com,
+				Register& reg, std::string& _var) {
 		reg.reg_index = -1;		//先设置默认值，如果最后该周期未找到则表示选择器当前周期是空闲的
 		_var = "NULL";
 		std::vector<node> List = dfg.get_opList();
 		std::vector<int> curDFGinput;
-
+	
 		//首先遍历选择器输入端,选出当前块下会使用到的所有寄存器
 		for (int i = 0; i < REGs.size(); i++) {
 			int index = REGs[i].reg_index;
@@ -181,7 +159,7 @@ public:
 				for (std::vector<std::pair<int, int>>::iterator iter = CSP.begin(); iter != CSP.end(); iter++) {
 					if (iter->second == output_compute) {
 						//计算资源匹配上了，看对应node的输入变量是否包括此时寄存器中存储的变量v
-						std::vector<std::string> input = List[iter->first + 1].InputVar;
+						std::vector<std::string> input = List[iter->first+1].InputVar;
 						//实际上输入列表最多只有两个变量
 						for (int j = 0; j < input.size(); j++) {
 							std::cout << "变量名为：" << v.var << "    input为：" << input[j] << std::endl;
@@ -213,7 +191,7 @@ private:
 	std::vector<Mux> Muxs;					//所有的选择器
 	DataFlowGraph DFG;						//表示当前控制器是处在哪一块中的
 	std::vector<std::pair<int, int>> CSP;	//计算资源匹配结果
-	std::vector<computeresource> Compute;
+	std::vector<computeresource> Compute;				
 	std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
 	std::vector<Cycle> C;
 
@@ -224,9 +202,6 @@ public:
 		DFG = dfg;
 		Compute = _compute;
 		Pair2Register(DFG, _REG, Regs);
-
-		std::cout << DFG.get_label() << std::endl;
-
 		for (int i = 0; i < _compute.size(); i++) {
 			Mux _mL(0, i, _compute);
 			Mux _mR(1, i, _compute);
@@ -236,17 +211,7 @@ public:
 			Muxs.push_back(_mR);
 		}
 	}
-
-	//添加寄存器
-	void addReg(Register reg) {
-		Regs.push_back(reg);
-	}
-
-	//添加选择器
-	void addMux(Mux mux) {
-		Muxs.push_back(mux);
-	}
-
+	
 	void generateTables(std::vector<std::pair<std::string, int>> _REG) {
 		int cycle;		//所处周期，遍历使用
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
@@ -392,14 +357,6 @@ public:
 
 	std::vector<std::pair<cycletable, int>> getCycleTables() {
 		return CycleTables;
-	}
-
-	std::vector<Mux> getMuxs() {
-		return Muxs;
-	}
-
-	std::vector<Register> getRegs() {
-		return Regs;
 	}
 };
 #endif
