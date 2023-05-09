@@ -281,10 +281,10 @@ public:
 
 		for (int i = 1; i < List.size() - 1; i++) {
 			Statement statement;
-			statement.compute_resource_index = -1;
-			//对于ASSIGN、BR、RET、LOAD、STORE、PHI指令，需要另外处理
+			//对于ASSIGN、BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
 			if (List[i].element.getOPtype() == OP_BR) {
 				if (List[i].element.getInputvars().size() == 3) {
+					statement.com = -1;
 					statement.optype = OP_BR;
 					statement.vars = List[i].InputVar;
 					statement.outreg = findregister(_REG, statement.vars[0]);
@@ -294,6 +294,7 @@ public:
 				}
 			}
 			else if (List[i].element.getOPtype() == OP_RET) {
+				statement.com = -1;
 				statement.optype = OP_RET;
 				statement.vars = List[i].InputVar;
 				statement.outreg = findregister(_REG, statement.vars[0]);
@@ -302,51 +303,11 @@ public:
 					cycle[j].Statements.push_back(statement);
 			}
 			else if (List[i].element.getOPtype() == OP_ASSIGN) {
+				statement.com = -1;
 				statement.optype = OP_ASSIGN;
 				statement.vars = List[i].InputVar;
 				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
 
-				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-					cycle[j].Statements.push_back(statement);
-			}
-			else if (List[i].element.getOPtype() == OP_LOAD) {
-				statement.optype = OP_LOAD;
-				statement.vars = List[i].InputVar;
-				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
-
-				for (int j = 0; j < statement.vars.size(); j++) {
-					int r = findregister(_REG, statement.vars[j]);
-					statement.regs.push_back(r);
-				}
-				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-					cycle[j].Statements.push_back(statement);
-			}
-			//store: 将数据存储到数组：如store(a, 10, c)，将c存储到a[10]
-			//因此statement设置的输入为a、10，输出的寄存器为c所存的寄存器
-			else if (List[i].element.getOPtype() == OP_STORE) {
-				statement.optype = OP_STORE;
-				statement.outreg = findregister(_REG, List[i].InputVar[2]);
-
-				for (int j = 0; j < List[i].InputVar.size() - 1; j++) {
-					statement.vars.push_back(List[i].InputVar[j]);
-					int r = findregister(_REG, List[i].InputVar[j]);
-					statement.regs.push_back(r);
-				}
-				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-					cycle[j].Statements.push_back(statement);
-			}
-			//phi操作
-			else if (List[i].element.getOPtype() == OP_PHI) {
-				statement.optype = OP_PHI;
-				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
-				
-				for (int j = 0; j < List[i].InputVar.size(); j++) {
-					statement.vars.push_back(List[i].InputVar[j]);
-					int r = findregister(_REG, List[i].InputVar[j]);
-					statement.regs.push_back(r);
-					std::string str = List[i].element.getInputvars()[2 * j + 1];
-					statement.label.push_back(str);
-				}
 				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
 					cycle[j].Statements.push_back(statement);
 			}
@@ -367,7 +328,7 @@ public:
 					regs.push_back(r);
 				}
 
-				statement.compute_resource_index = compute_index;
+				statement.com = compute_index;
 				statement.optype = opType;
 				statement.outreg = reg_return;
 				statement.regs = regs;
@@ -379,6 +340,7 @@ public:
 				num_node++;
 			}
 		}
+
 		C = cycle;
 	}
 

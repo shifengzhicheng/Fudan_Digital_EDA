@@ -48,7 +48,7 @@ void FSMachine::IOdefinationAppend(int ret_type, std::vector<var>& vars)
         getModule().push_back("\toutput\tap_return,");
     }
     getModule().push_back("\tinput\tap_clk,");
-    getModule().push_back("\tinput\tap_rst,");
+    getModule().push_back("\tinput\tap_rst_n,");
     getModule().push_back("\tinput\tap_start,");
     getModule().push_back("\toutput\treg ap_idle,");
     getModule().push_back("\toutput\treg ap_ready,");
@@ -61,7 +61,7 @@ enum Istiming{
 };
 std::string FSMachine::alwayslogic(bool Istiming) {
     if(Istiming) 
-        return "\talways @(posedge ap_clk or negedge ap_rst)";
+        return "\talways @(posedge ap_clk or negedge ap_rst_n)";
     else 
         return "\talways @(*)";
 }
@@ -92,7 +92,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
     std::string FSM_reg_fore_state(std::string("\treg ["
         + std::to_string(FSMsize - 1) + ":0] "
         + LastState + ";"));
-    std::string CondReg_def(std::string("\t reg [1:0] " + CondReg + ";\n"));
+    std::string CondReg_def(std::string("\treg [1:0] " + CondReg + ";\n"));
     getFSM().push_back(FSM_reg_cur_state);
     getFSM().push_back(FSM_reg_fore_state);
     getFSM().push_back(CondReg_def);
@@ -107,18 +107,22 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
     }
     getFSM().push_back("\n");
     // 从这里开始生成状态机的跳转逻辑
+    getFSM().push_back(alwayslogic(istiming));
+    std::string tabs(3, '\t');
+    begin(1);
+    std::string cond = std::string("!ap_rst_n");
+    getFSM().push_back("\t" + iflogic(cond));
+    begin(2);
+    getFSM().push_back(tabs + LastState + " <= " + "state_fiction_head;");
+    getFSM().push_back(tabs + CurrentState + " <= " + "state_fiction_head;");
+    end(2);
+    end(1);
+    getFSM().push_back("\n");
     for (int i = 0; i < FSMsize; i++) {
         graph_node& CurNode = CFG.getDFGNodes()[i];
         getFSM().push_back(alwayslogic(istiming));
         std::string new_state("state_" + CurNode.DFG.get_label());
         begin(1);
-        std::string cond = std::string("!ap_rst");
-        getFSM().push_back("\t" + iflogic(cond));
-        begin(2);
-        std::string tabs(3, '\t');
-        getFSM().push_back(tabs + LastState + " <= " + "state_fiction_head;");
-        getFSM().push_back(tabs + CurrentState + " <= " + "state_fiction_head;");
-        end(2);
         for (int i = 0; i < CurNode.controlnodes.size(); i++) {
             BranchEdge& CurEdge = CurNode.controlnodes[i];
             if (CurEdge.cond == UnConditonal) {
@@ -126,7 +130,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
                         + " & " + CondReg + "[1] == " + "1'b1");
-                    getFSM().push_back("\t" + elseiflogic(cond));
+                    getFSM().push_back("\t" + iflogic(cond));
                     begin(2);
                     getFSM().push_back(tabs+"ap_done <= 1'b1;");
                     
@@ -135,7 +139,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
                         + " & " + CondReg + "[1] == " + "1'b1");
-                    getFSM().push_back("\t" + elseiflogic(cond));
+                    getFSM().push_back("\t" + iflogic(cond));
                     begin(2);
                     getFSM().push_back(tabs + LastState + " <= " + CurrentState + ";");
                     getFSM().push_back(tabs + CurrentState + " <= " + "state_" + CurEdge.To_Block + ";");
@@ -148,7 +152,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                     + " & " + CondReg + " == " + "2'b1");
                 if (CurEdge.cond == IfTrue) cond.append("1");
                 else cond.append("0");
-                getFSM().push_back("\t" + elseiflogic(cond));
+                getFSM().push_back("\t" + iflogic(cond));
                 begin(2);
                 getFSM().push_back(tabs + LastState + " <= " + CurrentState + ";");
                 getFSM().push_back(tabs + CurrentState + " <= " + "state_" + CurEdge.To_Block + ";");
