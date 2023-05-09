@@ -56,7 +56,7 @@ public:
 };
 
 // 将ryh的pair结构转换为寄存器类
-void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
+void Pair2Register(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
 	std::vector<varPeriod> varPeriods = graph2VarPeriods(DFG);
 	for (std::vector<std::pair<std::string, int>>::iterator iter = REG.begin(); iter != REG.end(); iter++) {
 		int flag = 0;			//用于表示是否已经添加过该寄存器
@@ -118,7 +118,7 @@ public:
 		if (flag == 0)
 			inputs = com[output_compute].Ainputregisters;
 		else
-			inputs = com[output_compute].Binputregisters;	
+			inputs = com[output_compute].Binputregisters;
 		mux_inputs = inputs;
 	}
 
@@ -155,15 +155,15 @@ public:
 	}
 
 	bool chooseReg(int cycle, DataFlowGraph dfg, std::vector<Register> REGs,
-				std::vector<std::pair<std::string, int>> REGi,
-				std::vector<std::pair<int, int>> CSP,
-				std::vector<computeresource> com,
-				Register& reg, std::string& _var) {
+		std::vector<std::pair<std::string, int>> REGi,
+		std::vector<std::pair<int, int>> CSP,
+		std::vector<computeresource> com,
+		Register& reg, std::string& _var) {
 		reg.reg_index = -1;		//先设置默认值，如果最后该周期未找到则表示选择器当前周期是空闲的
 		_var = "NULL";
 		std::vector<node> List = dfg.get_opList();
 		std::vector<int> curDFGinput;
-	
+
 		//首先遍历选择器输入端,选出当前块下会使用到的所有寄存器
 		for (int i = 0; i < REGs.size(); i++) {
 			int index = REGs[i].reg_index;
@@ -181,7 +181,7 @@ public:
 				for (std::vector<std::pair<int, int>>::iterator iter = CSP.begin(); iter != CSP.end(); iter++) {
 					if (iter->second == output_compute) {
 						//计算资源匹配上了，看对应node的输入变量是否包括此时寄存器中存储的变量v
-						std::vector<std::string> input = List[iter->first+1].InputVar;
+						std::vector<std::string> input = List[iter->first + 1].InputVar;
 						//实际上输入列表最多只有两个变量
 						for (int j = 0; j < input.size(); j++) {
 							std::cout << "变量名为：" << v.var << "    input为：" << input[j] << std::endl;
@@ -213,7 +213,7 @@ private:
 	std::vector<Mux> Muxs;					//所有的选择器
 	DataFlowGraph DFG;						//表示当前控制器是处在哪一块中的
 	std::vector<std::pair<int, int>> CSP;	//计算资源匹配结果
-	std::vector<computeresource> Compute;				
+	std::vector<computeresource> Compute;
 	std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
 	std::vector<Cycle> C;
 
@@ -272,76 +272,118 @@ public:
 
 	void generateCycles(std::vector<std::pair<std::string, int>> _REG) {
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
-		sort(V.begin(), V.end(), varPeridCmp_stop);
-		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
-		std::vector<Cycle> cycle(total_cycle + 1);
+		if (V.empty())
+			return;
+		else {
+			sort(V.begin(), V.end(), varPeridCmp_stop);
+			int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
+			std::vector<Cycle> cycle(total_cycle + 1);
 
-		std::vector<node> List = DFG.get_opList();		
-		int num_node = 0;								//标识当前的节点语句
+			std::vector<node> List = DFG.get_opList();
+			int num_node = 0;								//标识当前的节点语句
 
-		for (int i = 1; i < List.size() - 1; i++) {
-			Statement statement;
-			//对于ASSIGN、BR或RET指令，需要得到其传出的寄存器编号，因此另外处理
-			if (List[i].element.getOPtype() == OP_BR) {
-				if (List[i].element.getInputvars().size() == 3) {
-					statement.com = -1;
-					statement.optype = OP_BR;
+			for (int i = 1; i < List.size() - 1; i++) {
+				Statement statement;
+				statement.compute_resource_index = -1;
+				//对于ASSIGN、BR、RET、LOAD、STORE、PHI指令，需要另外处理
+				if (List[i].element.getOPtype() == OP_BR) {
+					if (List[i].element.getInputvars().size() == 3) {
+						statement.optype = OP_BR;
+						statement.vars = List[i].InputVar;
+						statement.outreg = findregister(_REG, statement.vars[0]);
+
+						for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+							cycle[j].Statements.push_back(statement);
+					}
+				}
+				else if (List[i].element.getOPtype() == OP_RET) {
+					statement.optype = OP_RET;
 					statement.vars = List[i].InputVar;
 					statement.outreg = findregister(_REG, statement.vars[0]);
 
 					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
 						cycle[j].Statements.push_back(statement);
 				}
-			}
-			else if (List[i].element.getOPtype() == OP_RET) {
-				statement.com = -1;
-				statement.optype = OP_RET;
-				statement.vars = List[i].InputVar;
-				statement.outreg = findregister(_REG, statement.vars[0]);
+				else if (List[i].element.getOPtype() == OP_ASSIGN) {
+					statement.optype = OP_ASSIGN;
+					statement.vars = List[i].InputVar;
+					statement.outreg = findregister(_REG, List[i].element.getOutputvar());
 
-				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-					cycle[j].Statements.push_back(statement);
-			}
-			else if (List[i].element.getOPtype() == OP_ASSIGN) {
-				statement.com = -1;
-				statement.optype = OP_ASSIGN;
-				statement.vars = List[i].InputVar;
-				statement.outreg = findregister(_REG, List[i].element.getOutputvar());
-
-				for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-					cycle[j].Statements.push_back(statement);
-			}
-			//其他指令，均使用到计算资源
-			else {
-				//对每个OP进行遍历
-				int opType = List[i].element.getOPtype();	//每句话的optype
-				int compute_index;							//每句话绑定的计算资源
-				int reg_return;
-				compute_index = CSP[num_node].second;		//每句话绑定的计算资源
-				reg_return = Compute[compute_index].outputregister;
-			
-				std::vector<std::string> inputvars = List[i].InputVar;
-				std::vector<int> regs;
-
-				for (int j = 0; j < inputvars.size(); j++) {
-					int r = findregister(_REG, inputvars[j]);
-					regs.push_back(r);
+					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+						cycle[j].Statements.push_back(statement);
 				}
+				else if (List[i].element.getOPtype() == OP_LOAD) {
+					statement.optype = OP_LOAD;
+					statement.vars = List[i].InputVar;
+					statement.outreg = findregister(_REG, List[i].element.getOutputvar());
 
-				statement.com = compute_index;
-				statement.optype = opType;
-				statement.outreg = reg_return;
-				statement.regs = regs;
-				statement.vars = inputvars;
-
-				for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
-					cycle[l].Statements.push_back(statement);
+					for (int j = 0; j < statement.vars.size(); j++) {
+						int r = findregister(_REG, statement.vars[j]);
+						statement.regs.push_back(r);
+					}
+					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+						cycle[j].Statements.push_back(statement);
 				}
-				num_node++;
+				//store: 将数据存储到数组：如store(a, 10, c)，将c存储到a[10]
+				//因此statement设置的输入为a、10，输出的寄存器为c所存的寄存器
+				else if (List[i].element.getOPtype() == OP_STORE) {
+					statement.optype = OP_STORE;
+					statement.outreg = findregister(_REG, List[i].InputVar[2]);
+
+					for (int j = 0; j < List[i].InputVar.size() - 1; j++) {
+						statement.vars.push_back(List[i].InputVar[j]);
+						int r = findregister(_REG, List[i].InputVar[j]);
+						statement.regs.push_back(r);
+					}
+					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+						cycle[j].Statements.push_back(statement);
+				}
+				//phi操作
+				else if (List[i].element.getOPtype() == OP_PHI) {
+					statement.optype = OP_PHI;
+					statement.outreg = findregister(_REG, List[i].element.getOutputvar());
+
+					for (int j = 0; j < List[i].InputVar.size(); j++) {
+						statement.vars.push_back(List[i].InputVar[j]);
+						int r = findregister(_REG, List[i].InputVar[j]);
+						statement.regs.push_back(r);
+						std::string str = List[i].element.getInputvars()[2 * j + 1];
+						statement.label.push_back(str);
+					}
+					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
+						cycle[j].Statements.push_back(statement);
+				}
+				//其他指令，均使用到计算资源
+				else {
+					//对每个OP进行遍历
+					int opType = List[i].element.getOPtype();	//每句话的optype
+					int compute_index;							//每句话绑定的计算资源
+					int reg_return;
+					compute_index = CSP[num_node].second;		//每句话绑定的计算资源
+					reg_return = Compute[compute_index].outputregister;
+
+					std::vector<std::string> inputvars = List[i].InputVar;
+					std::vector<int> regs;
+
+					for (int j = 0; j < inputvars.size(); j++) {
+						int r = findregister(_REG, inputvars[j]);
+						regs.push_back(r);
+					}
+
+					statement.compute_resource_index = compute_index;
+					statement.optype = opType;
+					statement.outreg = reg_return;
+					statement.regs = regs;
+					statement.vars = inputvars;
+
+					for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
+						cycle[l].Statements.push_back(statement);
+					}
+					num_node++;
+				}
 			}
+			C = cycle;
 		}
-
-		C = cycle;
 	}
 
 	std::vector<Cycle> getCycle() {
