@@ -13,9 +13,6 @@
   然后get_oprand(k)得到第k个操作数(从0开始)
   最后这个操作将整个函数变成一个完整的，因为循环存在，图是有环的
   但因为phi操作代表的依赖是或关系，而且中间存在branch */
-void HLS::generate_rtl_operations() const
-{
-}
 void HLS::generate_CFG() {
 	// 通过IR生成数据流图以及控制流图
 	CFG = ControlFlowGraph(parsered);
@@ -156,11 +153,12 @@ void HLS::genFSM()
 
 void HLS::outputfile() {
 	std::string filename = outputFSM.getFilename();
+	std::string filepath("testfile/" + filename + ".v");
 	std::vector<std::string>& modulepart = outputFSM.getModule();
 	std::vector<std::string>& FSMpart = outputFSM.getFSM();
 	std::vector<std::string>& Counterpart = outputFSM.getCounter();
 	std::vector<std::string>& perPeriodPart = outputFSM.getPerPeriod();
-	std::ofstream output_file(std::string(filename + ".v"));
+	std::ofstream output_file(filepath);
 	// 检查文件是否成功打开
 	if (!output_file.is_open()) {
 		std::cerr << "Failed to open output file!" << std::endl;
