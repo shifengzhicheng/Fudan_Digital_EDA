@@ -263,6 +263,8 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG) {
         }
     }
 
+    int lamda = DFG.getPeriod();
+
     // 拓扑排序遍历
     while (!tq_m.empty()) {
         //一个while循环是一个周期
@@ -278,6 +280,7 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG) {
                 if (meet_resources_constraint(hardware_default, itera->first, DFG)) {
                     DFG.get_opList()[itera->first].T_start = current_period;
                     DFG.get_opList()[itera->first].T_end = current_period + DFG.get_opList()[itera->first].element.getLatency() - 1;
+                    lamda = max(lamda, DFG.get_opList()[itera->first].T_end);
                     DFG.Mark[itera->first] = SCHEDULED;
                 }
             }
@@ -311,10 +314,11 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG) {
         }
         current_period++;
     }
-    int lamda = DFG.getPeriod();
+
     DFG.get_opList()[DFG.get_opList().size() - 1].setTstart(lamda + 1);
     DFG.get_opList()[DFG.get_opList().size() - 1].setTend(lamda + 1);
     DFG.Mark[DFG.get_opList().size() - 1] = VISITED;
+    DFG.setPeriod(lamda);
 }
 
 //对整体的CFG进行ASAP和ALAP
