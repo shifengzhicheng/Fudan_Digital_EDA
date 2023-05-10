@@ -12,7 +12,7 @@ public:
 	//右边输入寄存器
 	std::vector<int> Binputregisters;
 	//输出寄存器
-	std::vector<int> outputregister;
+	std::vector<int> outputregisters;
 	//定义计算资源，参数为1为加法器，参数为2为乘法器，参数为3为除法器
 	computeresource(int flag1) {
 		if (flag1 == 1 || flag1 == 2 || flag1 == 3) {
@@ -43,8 +43,15 @@ public:
 		}
 		return false;
 	}
+	bool findoutreg(int reg) {
+		for (std::vector<int>::iterator it = outputregisters.begin(); it != outputregisters.end(); it++) {
+			if (reg == *it)
+				return true;
+		}
+		return false;
+	}
 	void setoutputregister(int reg) {
-		outputregister.push_back(reg);
+		outputregisters.push_back(reg);
 	}
 };
 #endif
