@@ -5,19 +5,19 @@
 //计算资源定义（默认绑定的node的 vector InputVar中都有一个or两个变量，之后再改）
 class computeresource {
 public:
-	//声明计算资源是加法器or乘法器
+	//声明计算资源是加法器or乘法器or除法器
 	int flag;
 	//左边输入寄存器
 	std::vector<int> Ainputregisters;
 	//右边输入寄存器
 	std::vector<int> Binputregisters;
 	//输出寄存器
-	int outputregister;
+	std::vector<int> outputregister;
 	//定义计算资源，参数为1为加法器，参数为2为乘法器，参数为3为除法器
-	computeresource(int flag1, int outputreg) {
+	computeresource(int flag1) {
 		if (flag1 == 1 || flag1 == 2 || flag1 == 3) {
 			flag = flag1;
-			outputregister = outputreg;
+			
 		}
 		else {
 			//std::cout << "wrong computeresource define!" << std::endl;
@@ -44,13 +44,7 @@ public:
 		return false;
 	}
 	void setoutputregister(int reg) {
-		if (outputregister != -1) {
-			//std::cout << "output register has already set! error" << std::endl;
-			return;
-		}
-		else {
-			outputregister = reg;
-		}
+		outputregister.push_back(reg);
 	}
 };
 #endif
