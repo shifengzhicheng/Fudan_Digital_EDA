@@ -330,4 +330,8 @@ void improved_schedule_forCFG(ControlFlowGraph& CFG) {
         DataFlowGraph& DFG = CFG.getDFGNodes()[DFGNode].DFG;
         improved_table_schedule_forDFG(DFG);
     }
+    DataFlowGraph& DFG = CFG.getDFGNodes()[0].DFG;
+    DFG.setPeriod(0);
+    DFG.get_opList()[DFG.get_oplist().size - 1].setTstart(1);
+    DFG.get_opList()[DFG.get_oplist().size - 1].setTend(1);
 }
