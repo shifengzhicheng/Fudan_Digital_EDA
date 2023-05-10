@@ -486,7 +486,7 @@ public:
 
 ```c++
 public:
-	void generateCycles(std::vector<std::pair<std::string, int>> _REG)；
+	void generateCycles(std::vector<std::pair<std::string, int>> _REG, CFG)；
 	std::vector<Cycle> getCycle()；
 ```
 
@@ -506,7 +506,8 @@ struct Statement {
 };
 ```
 
-`void generateCycles(std::vector<std::pair<std::string, int>> _REG)`：根据寄存器绑定、计算资源绑定结果，生成一个向量`std::vector<Cycle> C;`，`C[i]`对应周期`i`执行的所有`Statement`。这里需要注意的点是，首先要确定`C`的大小，由于郑志宇同学的`node`列表中第一个节点为虚节点，不会执行操作，因此应该将`C`的大小设置为总周期数加一，`C[0]`中不含任何`Statament`。
+`void generateCycles(std::vector<std::pair<std::string, int>> _REG)`：根据寄存器绑定、计算资源绑定结果，生成一个向量`std::vector<Cycle> C;`，`C[i]`对应周期`i`执行的所有`Statement`。首先要确定`C`的大小。经过与小组成员的协商，由于寄存器绑定的结果是针对每个块而言的，每当传入一个新的块时，所有的寄存器都会被覆盖掉，因此需要事先将本块中需要用到的从其他块中传入的变量导入到对应的寄存器中。
+因此，这里将`C`的大小设置为块内语句总周期数加`2`，其中第零周期执行将郑志宇同学生成的`CFG`中的`MemMap`中存储的相关变量数据导入到绑定的寄存器中，最后一个周期执行将本块会传出的数据导入到`MemMap`中。
 另外，`node`节点包含沈笑涵同学的计算资源绑定结果，以及不使用计算资源的节点。后者需要特别处理，否则会报溢出错误。
 
 `std::vector<Cycle> getCycle()`：用于返回最终生成的周期表`std::vector<Cycle> C`。
@@ -524,6 +525,7 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 
 1. 在`chooseRegs()`与`generateCycles()`函数的编写时，比较容易出现堆栈溢出的问题，这就需要判断每个块内是否真正使用了相应的硬件资源。
 2. 为了方便生成Verilog代码的工作，创建了一个Cycle结构，里面存放着对应周期执行的所有操作信息，并且保存了STORE、RET等操作的输出情况。
+3. 为了在分块实现寄存器绑定的基础上，保证数据的正确性，这里在开始与结束阶段各加了一拍，实现了寄存器数据的导入与传出。
 
 ### Part 6生成`Verilog`代码
 
