@@ -81,13 +81,13 @@ return：
 
 #### 语言实例
 
-```c++
+```asm
 define int dotprod(int a[], int b[], int n)
 c = 0;
 start:
-    // i = 0:i_inc 0:calc
+    # i = 0:i_inc 0:calc
     i = phi(0, 0, i_inc, calc);
-    // cl = c:cr 0:calc
+    # cl = c:cr 0:calc
     cl = phi(c, 0, cr, calc);
     cond = i >= n;
     br cond ret calc;
@@ -638,8 +638,43 @@ void HLS::genFSM() {
 
 ##### 状态机跳转的实现
 
-对于每个块都生成一个`always`逻辑语句块，然后用`if`语句进行跳转，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`CondReg[1]`以及跳转条件`CondReg[0]`之后进行跳转。不跳转`CondReg[1]`为0，无条件跳转只需要`CondReg[1]`为1即可，为真为假跳转则需要`CondReg[0]`的指示来实现。
+对于每个块都生成一个`always`逻辑语句块，然后用`if`语句进行跳转，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
 
 ## 项目测试
 
-### 测试文件
+### 测试文件 1 dotprod.v
+
+#### IR文件由课程提供
+
+```asm
+define int dotprod(int a[], int b[], int n)
+c = 0;
+start:
+    # i = 0:i_inc 0:calc
+    i = phi(0, 0, i_inc, calc);
+    # cl = c:cr 0:calc
+    cl = phi(c, 0, cr, calc);
+    cond = i >= n;
+    br cond ret calc;
+calc:
+    ai = load(a, i);
+    bi = load(b, i);
+    ci = ai * bi;
+    cr = cl + ci;
+    i_inc = i + 1;
+    br start;
+ret:
+	return cl;
+```
+
+#### 测试文件由某某同学提供：
+
+`├── testfile` 
+`│   ├── dotprd.v` 
+`│   ├── tb_dotprd.v` 
+
+#### 测试结果：
+
+![tb](picture\dotprod_tb.png)
+
+测试的结果如上所示，我们在`testbench`中模拟了一个`module`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。
