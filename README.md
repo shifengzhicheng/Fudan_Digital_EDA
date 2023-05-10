@@ -110,37 +110,33 @@ ret:
 │   ├── HSPICE简明教程(复旦大学).pdf
 │   ├── proj1_v03_tj.pdf	
 │   ├── hspice_sa.pdf	
-│   ├── HspiceManual完全手册.pdf		
-├── testfile # 测试文件目录
-│   ├── test_ori #项目所给的运行网表
-│   ├── hspice_testfile #hspice测试所用网表
-│   ├── AmplifierDC.sp      		
-│   ├── AmplifierSweep.sp         	
-│   ├── bufferDC.sp
-│   ├── bufferSweep.sp
-│   ├── dbmixerDC.sp 
-│   ├── diftestDC.sp      		
-│   ├── diftestSweep.sp         	
-│   ├── invertbufferDC.sp
-│   └── invertbufferSweep.sp
+│   ├── HspiceManual完全手册.pdf
+##### 测试文件目录	
+├── testfile 
+│   ├── SRAM.v
+│   ├── dotprod.v
+│   ├── tb_dotprod.v
+│   ├── gcd.v
+│   ├── tb_gcd.v
 ##### 工作文件夹
-├── Top_module.m
-├── parse_netlist.m
-├── Generate_DCnetlist.m
-│   ├── Gen_NodeInfo.m
-│   ├── Gen_DeviceInfo.m
-│   ├── init_value.m
-│   ├── Mos_Calculator.m
-│   └── Diode_Calculator.m
-├── CalculateDC.m
-│   ├──Gen_nextRes.m
-│   │   ├──Mos_Calculator.m
-│   │   ├──Diode_Calculator.m
-│   ├──Gen_baseA.m
-│   └──Gen_nextA.m
-├── Sweep_DC.m
-├── ValueCalc.m
-├── portMapping.m
+├── main.cpp
+├── parser.h
+├── parser.cpp
+├── HLS.h
+├── HLS.cpp
+├── dataflowgraph.h
+├── dataflowgraph.cpp
+├── controlflowgraph.h
+├── controlflowgraph.cpp
+├── schedule.h
+├── schedule.cpp
+├── leftAlgorithm.h
+├── computeresource.h
+├── Hungarian_algorithm.h
+├── control_logic.h
+├── cycleTable.h
+├── FSMachine.h
+├── FSMachine.cpp
 ##### 
 ├── README.md # 项目说明文件
 ```
@@ -153,9 +149,9 @@ ret:
 
 `HLS`类是项目的顶层模块，它的每一个函数都实现了一个特定的功能：
 
-├── HLS.h
+`├── HLS.h`
 
-├── HLS.cpp
+`├── HLS.cpp`
 
 ```C++
 	// 实现图的生成
@@ -343,17 +339,21 @@ void HLS::generate_CFG() {
 
 #### 函数及文件说明
 `├── HLS.h `
+
 ```c++
 	//计算资源（包括加法器、乘法器和除法器）
 	std::vector<computeresource> COR;
 	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
 	std::vector<std::vector<std::pair<int, int>>>  CSP;
 ```
+
 `├── HLS.cpp `
+
 ```c++
 	void HLS::perform_calculate_allocation_and_binding();
 ```
 `├── computeresource.h `
+
 `├── Hungarian_alogrithm.h `
 
 ##### 计算资源类的定义

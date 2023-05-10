@@ -14,7 +14,7 @@ LINKFLAGS =
 
 
 
-hls: parser.o main.o
+hls: parser.o main.o HLS.o
 	$(LINK) $(FLAGS) $(LINKFLAGS) -o $@ $^ $(LIBS)
 
 .cpp.o:
