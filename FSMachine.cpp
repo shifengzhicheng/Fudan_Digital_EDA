@@ -94,13 +94,20 @@ void FSMachine::end(int i, std::vector<std::string>& code) {
 void FSMachine::FSMgener(ControlFlowGraph& CFG)
 {
     size_t FSMsize = CFG.getDFGNodes().size();
-
+    getFSM().push_back("\n");
+    // 定义Mem寄存器
+    for (auto it = CFG.Memtable().begin(); it != CFG.Memtable().end(); it++) {
+        std::string CurVar = it->first;
+        std::string CurVar_def(std::string("\treg [31:0] Mem_" + CurVar + ";"));
+        getFSM().push_back(CurVar_def);
+    }
+    getFSM().push_back("\n");
     // 定义状态机跳转所需要的寄存器以及连线
     std::string LastState = "LastState";
     std::string CurrentState = "CurrentState";
     std::string Cond = "cond";
     std::string Branch_ready = "branch_ready";
-    std::string FSM_reg_cur_state(std::string("\n\treg ["
+    std::string FSM_reg_cur_state(std::string("\treg ["
         + std::to_string(FSMsize - 1) + ":0] "
         + CurrentState + ";"));
     std::string FSM_reg_fore_state(std::string("\treg ["

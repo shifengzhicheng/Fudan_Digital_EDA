@@ -43,6 +43,7 @@ ControlFlowGraph::ControlFlowGraph(parser& p) {
         // 基本节点的生成，节点内数据的依赖
     }
     // 整理DFGs中的数据流关系，并根据DFG中的opList生成DFG的inputList
+    int MemIndex = 0;
     for (int i = 0; i < DFGs.size(); i++) {
         //TODO
         DataFlowGraph& CurDFG = DFGs[i].DFG;
@@ -54,8 +55,11 @@ ControlFlowGraph::ControlFlowGraph(parser& p) {
                 // 整理DFGs中的数据流关系，并根据DFG中的opList生成DFG的outputList
                 ToBlock->get_outputList().push_back(OutputEdge(CurDFG.get_label(), InputBlockVarName));
                 CurDFG.get_inputList()[j].From_Block = ToBlock->get_label();
+                if (ToBlock->get_label() != "fiction_head") {
+                    MemMap[InputBlockVarName] = MemIndex++;
+                    Data.push_back(InputBlockVarName);
+                }
             }
-
         }
     }
     // inputList生成完毕，至此，所有的依赖已经完成

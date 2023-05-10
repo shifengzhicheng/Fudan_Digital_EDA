@@ -20,6 +20,9 @@ class ControlFlowGraph {
 		std::vector<graph_node> DFGs;
 		// 寻找变量的生成块
 		DataFlowGraph* findvarfrom(std::string VarName);
+		// 寄存器堆
+		std::unordered_map<std::string, int> MemMap;
+		std::vector<std::string> Data;
 	public:
 
 		// CFG图的创建
@@ -46,7 +49,12 @@ class ControlFlowGraph {
 		int getRet_type() const {
 			return ret_type;
 		}
-
+		std::unordered_map<std::string, int>& Memtable() {
+			return MemMap;
+		}
+		std::vector<std::string>& getDataSet() {
+			return Data;
+		}
 };
 
 #endif
