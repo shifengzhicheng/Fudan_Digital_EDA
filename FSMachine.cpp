@@ -138,15 +138,11 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
     getFSM().push_back(tabs + LastState + " <= " + "state_fiction_head;");
     getFSM().push_back(tabs + CurrentState + " <= " + "state_fiction_head;");
     end(2, FSMcode);
-    end(1, FSMcode);
-    getFSM().push_back("\n");
 
     // 其他状态跳转的生成逻辑
     for (int i = 0; i < FSMsize; i++) {
         graph_node& CurNode = CFG.getDFGNodes()[i];
-        getFSM().push_back(alwayslogic(istiming));
         std::string new_state("state_" + CurNode.DFG.get_label());
-        begin(1, FSMcode);
         for (int i = 0; i < CurNode.controlnodes.size(); i++) {
             BranchEdge& CurEdge = CurNode.controlnodes[i];
             if (CurEdge.cond == UnConditonal) {
@@ -154,7 +150,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
                         + " & " + Branch_ready + " == " + "1'b1");
-                    getFSM().push_back("\t" + iflogic(cond));
+                    getFSM().push_back("\t" + elseiflogic(cond));
                     begin(2, FSMcode);
                     getFSM().push_back(tabs + "ap_done <= 1'b1;");
 
@@ -163,7 +159,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
                         + " & " + Branch_ready + " == " + "1'b1");
-                    getFSM().push_back("\t" + iflogic(cond));
+                    getFSM().push_back("\t" + elseiflogic(cond));
                     begin(2, FSMcode);
                     getFSM().push_back(tabs + LastState + " <= " + CurrentState + ";");
                     getFSM().push_back(tabs + CurrentState + " <= " + "state_" + CurEdge.To_Block + ";");
@@ -173,20 +169,22 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
             else {
                 cond = std::string(
                     CurrentState + " == " + "state_" + CurEdge.From_Block
-                    + " & " + Branch_ready + " == " + "1'b1 & cond == 1'b");
+                    + " & " + Branch_ready + " == " 
+                    + "1'b1 & cond == 1'b");
                 if (CurEdge.cond == IfTrue) cond.append("1");
                 else cond.append("0");
-                getFSM().push_back("\t" + iflogic(cond));
+                getFSM().push_back("\t" + elseiflogic(cond));
                 begin(2, FSMcode);
                 getFSM().push_back(tabs + LastState + " <= " + CurrentState + ";");
                 getFSM().push_back(tabs + CurrentState + " <= " + "state_" + CurEdge.To_Block + ";");
 
             }
+            getFSM().push_back(tabs + Branch_ready + " <= 1'b0;");
             end(2, FSMcode);
         }
-        end(1, FSMcode);
-        getFSM().push_back("\n");
     }
+    end(1, FSMcode);
+    getFSM().push_back("\n");
 }
 void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG)
 {
