@@ -63,7 +63,6 @@ void FSMachine::IOdefinationAppend(int ret_type, std::vector<var>& vars)
     getModule().push_back("\tinput\tap_rst_n,");
     getModule().push_back("\tinput\tap_start,");
     getModule().push_back("\toutput\treg ap_idle,");
-    getModule().push_back("\toutput\treg ap_ready,");
     getModule().push_back("\toutput\treg ap_done");
     getModule().push_back(");");
 }
@@ -95,19 +94,27 @@ void FSMachine::end(int i, std::vector<std::string>& code) {
 void FSMachine::FSMgener(ControlFlowGraph& CFG)
 {
     size_t FSMsize = CFG.getDFGNodes().size();
+
+    // 定义状态机跳转所需要的寄存器以及连线
     std::string LastState = "LastState";
     std::string CurrentState = "CurrentState";
-    std::string CondReg = "condReg";
+    std::string Cond = "cond";
+    std::string Branch_ready = "branch_ready";
     std::string FSM_reg_cur_state(std::string("\n\treg ["
         + std::to_string(FSMsize - 1) + ":0] "
         + CurrentState + ";"));
     std::string FSM_reg_fore_state(std::string("\treg ["
         + std::to_string(FSMsize - 1) + ":0] "
         + LastState + ";"));
-    std::string CondReg_def(std::string("\treg [1:0] " + CondReg + ";\n"));
+    std::string Cond_def(std::string("\twire " + Cond + ";"));
+    std::string Branch_def(std::string("\treg " + Branch_ready + ";"));
     getFSM().push_back(FSM_reg_cur_state);
     getFSM().push_back(FSM_reg_fore_state);
-    getFSM().push_back(CondReg_def);
+    getFSM().push_back(Cond_def);
+    getFSM().push_back(Branch_def);
+    getFSM().push_back("\n");
+
+    // 给不同的状态编码
     for (int i = 0; i < FSMsize; i++) {
         graph_node& CurNode = CFG.getDFGNodes()[i];
         std::string new_state("state_" + CurNode.DFG.get_label());
@@ -118,7 +125,10 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
         getFSM().push_back("\tparameter " + new_state + " = " + state_code + ";");
     }
     getFSM().push_back("\n");
+
     // 从这里开始生成状态机的跳转逻辑
+
+    // rst_n的生成逻辑
     getFSM().push_back(alwayslogic(istiming));
     std::string tabs(3, '\t');
     begin(1, FSMcode);
@@ -130,6 +140,8 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
     end(2, FSMcode);
     end(1, FSMcode);
     getFSM().push_back("\n");
+
+    // 其他状态跳转的生成逻辑
     for (int i = 0; i < FSMsize; i++) {
         graph_node& CurNode = CFG.getDFGNodes()[i];
         getFSM().push_back(alwayslogic(istiming));
@@ -141,7 +153,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                 if (CurEdge.Isreturn) {
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
-                        + " & " + CondReg + "[1] == " + "1'b1");
+                        + " & " + Branch_ready + " == " + "1'b1");
                     getFSM().push_back("\t" + iflogic(cond));
                     begin(2, FSMcode);
                     getFSM().push_back(tabs + "ap_done <= 1'b1;");
@@ -150,7 +162,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
                 else {
                     cond = std::string(
                         CurrentState + " == " + "state_" + CurEdge.From_Block
-                        + " & " + CondReg + "[1] == " + "1'b1");
+                        + " & " + Branch_ready + " == " + "1'b1");
                     getFSM().push_back("\t" + iflogic(cond));
                     begin(2, FSMcode);
                     getFSM().push_back(tabs + LastState + " <= " + CurrentState + ";");
@@ -161,7 +173,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
             else {
                 cond = std::string(
                     CurrentState + " == " + "state_" + CurEdge.From_Block
-                    + " & " + CondReg + " == " + "2'b1");
+                    + " & " + Branch_ready + " == " + "1'b1 & cond == 1'b");
                 if (CurEdge.cond == IfTrue) cond.append("1");
                 else cond.append("0");
                 getFSM().push_back("\t" + iflogic(cond));
