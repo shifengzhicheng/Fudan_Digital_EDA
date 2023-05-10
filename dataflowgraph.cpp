@@ -133,8 +133,8 @@ DataFlowGraph::DataFlowGraph(basic_block& bb) {
                 CurNode.InputVar.push_back(CurNode.element.getInputvars()[0]);
                 // 连线失败则会在0节点和currentNode之间创建一个边，说明currentNode依赖于其他块的输出
                 CreateEdge(CurNode, 0, currentNode);
-                Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[1], IfFalse));
-                Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[2], IfTrue));
+                Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[1], IfTrue));
+                Branchs.push_back(BranchEdge(label, CurNode.element.getInputvars()[2], IfFalse));
             }
         }
         // 处理RET
