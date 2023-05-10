@@ -31,15 +31,22 @@ public:
 		}
 		return false;
 	}
-	
+
+	// 设置当前寄存器中存储的值
+	bool setData(varPeriod data) {
+		for (std::vector<varPeriod>::iterator iter = all_reg_datas.begin(); iter != all_reg_datas.end(); iter++) {
+			if ((*iter).var == data.var) {
+				now_reg_data = data;
+				return true;
+			}
+		}
+		std::cout << "寄存器中没有存储过该变量！" << std::endl;
+		return false;
+	}
+
 	// 将变量存入寄存器中（添加存储的数据）
 	void addData(varPeriod var) {
 		all_reg_datas.push_back(var);
-	}
-	
-	// 返回该寄存器在不同周期会存储的所有变量
-	std::vector<varPeriod> getAllDatas() {
-		return all_reg_datas;
 	}
 };
 
@@ -89,6 +96,14 @@ bool find(std::vector<int> v, int data) {
 	return false;
 }
 
+bool findstr(std::vector<std::string> str, std::string data) {
+	for (int i = 0; i < str.size(); i++) {
+		if (str[i] == data)
+			return true;
+	}
+	return false;
+}
+
 class Mux {
 private:
 	std::vector<int> mux_inputs;				//选择器连接的所有输入寄存器的下标
@@ -110,21 +125,9 @@ public:
 		mux_inputs = inputs;
 	}
 
-	//添加输入数据,input为添加的寄存器的下标
-	void addInput(int input) {
-		mux_inputs.push_back(input);
-	}
-
-	//设置当前选择的输入寄存器下标
-	bool setInput(int select) {
-		for (int i = 0; i < mux_inputs.size(); i++) {
-			if (mux_inputs[i] == select) {
-				mux_selectInput = select;
-				return true;
-			}
-		}
-		std::cout << "选择器输入端不包括该寄存器！" << std::endl;
-		return false;
+	//获取选择的输入寄存器下标
+	int getInput() {
+		return mux_selectInput;
 	}
 
 	//获取所有的输入寄存器下标
@@ -182,13 +185,6 @@ public:
 	}
 };
 
-struct cycletable {
-	std::string var;	//变量
-	int com;			//变量var活跃期间使用的计算资源
-	int reg;			//使用的寄存器
-	int mux;			//使用的选择器
-};
-
 // 控制器
 class MicrocodeController {
 private:
@@ -207,6 +203,9 @@ public:
 		DFG = dfg;
 		Compute = _compute;
 		Pair2Register(DFG, _REG, Regs);
+
+		std::cout << DFG.get_label() << std::endl;
+
 		for (int i = 0; i < _compute.size(); i++) {
 			Mux _mL(0, i, _compute);
 			Mux _mR(1, i, _compute);
@@ -216,7 +215,17 @@ public:
 			Muxs.push_back(_mR);
 		}
 	}
-	
+
+	//添加寄存器
+	void addReg(Register reg) {
+		Regs.push_back(reg);
+	}
+
+	//添加选择器
+	void addMux(Mux mux) {
+		Muxs.push_back(mux);
+	}
+
 	void generateTables(std::vector<std::pair<std::string, int>> _REG) {
 		int cycle;		//所处周期，遍历使用
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
@@ -240,14 +249,16 @@ public:
 		}
 	}
 
-	void generateCycles(std::vector<std::pair<std::string, int>> _REG) {
+	void generateCycles(std::vector<std::pair<std::string, int>> _REG, ControlFlowGraph CFG) {
 		std::vector<varPeriod> V = graph2VarPeriods(DFG);
 		if (V.empty())
 			return;
 		else {
-			sort(V.begin(), V.end(), varPeridCmp_stop);
-			int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
-			std::vector<Cycle> cycle(total_cycle + 1);
+			//sort(V.begin(), V.end(), varPeridCmp_stop);
+			//int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
+			//sort()
+			int total_cycle = DFG.getPeriod();
+			std::vector<Cycle> cycle(total_cycle + 2);
 
 			std::vector<node> List = DFG.get_opList();
 			int num_node = 0;								//标识当前的节点语句
@@ -323,6 +334,7 @@ public:
 					for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
 						cycle[j].Statements.push_back(statement);
 				}
+
 				//其他指令，均使用到计算资源
 				else {
 					//对每个OP进行遍历
@@ -330,7 +342,7 @@ public:
 					int compute_index;							//每句话绑定的计算资源
 					int reg_return;
 					compute_index = CSP[num_node].second;		//每句话绑定的计算资源
-					reg_return = Compute[compute_index].outputregister;
+					reg_return = findregister(_REG, List[i].element.getOutputvar());
 
 					std::vector<std::string> inputvars = List[i].InputVar;
 					std::vector<int> regs;
@@ -352,6 +364,30 @@ public:
 					num_node++;
 				}
 			}
+
+			//第零周期，将存在CFG的MEM中的值传输给对应的寄存器
+			for (int m = 0; m < DFG.get_inputList().size(); m++) {
+				int insize = DFG.get_inputList().size();
+				std::string tempstr = DFG.get_inputList()[m].InputBlockVarName;
+				if (findstr(CFG.getDataSet(), tempstr)) {
+					Statement temp;
+					temp.vars.push_back(tempstr);
+					temp.regs.push_back(CFG.Memtable()[tempstr]);
+					temp.outreg = findregister(_REG, tempstr);
+					cycle[0].Statements.push_back(temp);
+				}
+			}
+
+			//最后一个周期+1，将将要传出的数据转存到CFG的MEM中。
+			for (int m = 0; m < DFG.get_outputList().size(); m++) {
+				int outsize = DFG.get_outputList().size();
+				Statement temp;
+				temp.vars.push_back(DFG.get_outputList()[m].OutBlockVarName);
+				temp.regs.push_back(findregister(_REG, temp.vars[0]));
+				temp.outreg = CFG.Memtable()[temp.vars[0]];
+				cycle[cycle.size() - 1].Statements.push_back(temp);
+			}
+
 			C = cycle;
 		}
 	}
