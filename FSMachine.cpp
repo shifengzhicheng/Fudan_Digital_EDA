@@ -1,7 +1,7 @@
 ﻿#include "FSMachine.h"
 
 FSMachine::FSMachine() {}
-FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>> &Cycles, std::vector<std::vector<std::pair<std::string, int>>>& REG)
+FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>>& Cycles, std::vector<std::vector<std::pair<std::string, int>>>& REG)
 {
     filename = CFG.getfuncname();
     std::string defination = std::string("module ");
@@ -100,15 +100,15 @@ void FSMachine::end(int i, std::vector<std::string>& code) {
     code.push_back(std::string(i, '\t') + std::string("end"));
 }
 
-std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vector<std::pair<std::string, int>>& condInState, 
-    std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag)
+std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vector<std::pair<std::string, int>>& condInState,
+    std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag, std::vector<std::string>& dataSet)
 {
     switch (m_statement.optype)
     {
     case OP_ASSIGN:
     {
         if (m_statement.regs[0] == -1)
-            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + m_statement.vars[0]+";");
+            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + m_statement.vars[0] + ";");
         else
             return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "reg_" + std::to_string(m_statement.regs[0]) + ";");
     }
@@ -185,8 +185,8 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
                     break;
                 }
             }
-                severalLine += ("\t\t" + str_var + "_ce0 <= 0;\n");
-                severalLine += ("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + str_var + "_q0;");
+            severalLine += ("\t\t" + str_var + "_ce0 <= 0;\n");
+            severalLine += ("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + str_var + "_q0;");
         }
         return severalLine;
         //return std::string("\t\ttest");
@@ -218,6 +218,10 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
     }
     case OP_BR:
     {
+        std::string str_reg, str_mem;
+        str_mem = "Mem_" + dataSet[m_statement.outreg];
+        str_reg = "reg_" + std::to_string(m_statement.regs[0]);
+        return std::string("\t\t" + str_mem + " <= " + str_reg + ";");
         break;
     }
     case OP_LT:
@@ -429,12 +433,12 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
     CounterCode.push_back(iflogic(std::string("!ap_rst_n")));
     begin(1, CounterCode);
     CounterCode.push_back("\t\t" + std::string("counter <= 0;"));
-    CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
+    //CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
     end(1, CounterCode);
     for (std::vector<graph_node>::iterator iter = CFG.getDFGNodes().begin(); iter != CFG.getDFGNodes().end(); iter++)
     {
         std::string cond;
-        int totalPeriod = iter->DFG.getPeriod() + 2;
+        int totalPeriod = iter->DFG.getPeriod();
         cond += ("CurrentState == state_" + iter->DFG.get_label());
         cond += " && ";
         cond += ("counter == " + std::to_string(totalPeriod));
@@ -443,7 +447,8 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
         CounterCode.push_back(elseiflogic(cond));
         begin(1, CounterCode);
         CounterCode.push_back("\t\t" + std::string("counter <= 0;"));
-        CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
+        if (iter->DFG.get_label() == std::string("fiction_head"))
+            CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
         end(1, CounterCode);
     }
     CounterCode.push_back(elselogic());
@@ -468,7 +473,7 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
         int totalPeriod = iter->DFG.getPeriod();
         toReg.push_back("\t\t" + std::string("case(counter)"));
         int block = iter - CFG.getDFGNodes().begin();
-        for (int i = 0; i < totalPeriod + 2; i++)
+        for (int i = 0; i <= totalPeriod; i++)
         {
             toReg.push_back("\t\t32'd" + std::to_string(i) + ": begin");
             if (i == 0)
@@ -482,7 +487,7 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
                     toReg.push_back("\t\t" + str_reg + " <= " + str_mem + ";");
                 }
             }
-            else if (i == totalPeriod + 1)
+            /*else if (i == totalPeriod + 1)
             {
                 for (std::vector<Statement>::iterator iter_statement = Cycles[block][i].Statements.begin();
                     iter_statement != Cycles[block][i].Statements.end(); iter_statement++)
@@ -492,13 +497,13 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
                     str_reg = "reg_" + std::to_string(iter_statement->regs[0]);
                     toReg.push_back("\t\t" + str_mem + " <= " + str_reg + ";");
                 }
-            }
+            }*/
             else
             {
                 for (std::vector<Statement>::iterator iter_statement = Cycles[block][i].Statements.begin();
                     iter_statement != Cycles[block][i].Statements.end(); iter_statement++)
                 {
-                    std::string str = opTrans(*iter_statement, outregIndex, condInState, branch_state, loadFlag, storeFlag);
+                    std::string str = opTrans(*iter_statement, outregIndex, condInState, branch_state, loadFlag, storeFlag, CFG.getDataSet());
                     if (!str.empty())
                         toReg.push_back(str);
                 }
@@ -536,6 +541,6 @@ void FSMachine::regDefGener(std::vector<std::vector<std::pair<std::string, int>>
     }
     for (int i = 1; i <= regMax; i++)
     {
-        regDef.push_back("\treg [31:0] reg_" + std::to_string(i)+";");
+        regDef.push_back("\treg [31:0] reg_" + std::to_string(i) + ";");
     }
 }

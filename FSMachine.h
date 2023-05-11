@@ -43,7 +43,7 @@ public:
 	void end(int i, std::vector<std::string>& code);
 	// 生成FSM
 	std::string opTrans(Statement m_statement, int& outregIndex, std::vector<std::pair<std::string, int>>& condInState, 
-		std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag);
+		std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag, std::vector<std::string>& dataSet);
 	void FSMgener(ControlFlowGraph &CFG);
 	void CounterGener(std::vector<std::vector<Cycle>> &Cycles, ControlFlowGraph &CFG);
 	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
