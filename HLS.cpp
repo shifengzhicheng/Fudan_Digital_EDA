@@ -110,7 +110,8 @@ void HLS::perform_scheduling() {
 
 void HLS::perform_register_allocation_and_binding() {
 	std::vector<graph_node> DFGS = CFG.getDFGNodes();
-	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
+	REG.push_back(std::vector<std::pair<std::string, int>>());
+	for (std::vector<graph_node>::iterator iter = DFGS.begin() + 1; iter != DFGS.end(); iter++)
 	{
 		REG.push_back(binding((*iter).DFG));
 	}
@@ -138,7 +139,7 @@ void HLS::synthesize_control_logic() {
 		std::vector<std::pair<std::string, int>> _REG = *iter2;
 		MicrocodeController controller(dfg, *iter2, COR, CSP[i]);
 
-		controller.generateCycles(_REG);
+		controller.generateCycles(_REG, CFG);
 		std::vector<Cycle> Cycle = controller.getCycle();
 		Cycles.push_back(Cycle);
 		std::cout << "\n\n\n\n";
@@ -148,13 +149,14 @@ void HLS::synthesize_control_logic() {
 
 void HLS::genFSM()
 {
-	outputFSM = FSMachine(CFG, Cycles);
+	outputFSM = FSMachine(CFG, Cycles, REG);
 }
 
 void HLS::outputfile() {
 	std::string filename = outputFSM.getFilename();
-	std::string filepath("testfile/" + filename + ".v");
+	std::string filepath("test/" + filename + ".v");
 	std::vector<std::string>& modulepart = outputFSM.getModule();
+	std::vector<std::string>& regDefpart = outputFSM.getRegDef();
 	std::vector<std::string>& FSMpart = outputFSM.getFSM();
 	std::vector<std::string>& Counterpart = outputFSM.getCounter();
 	std::vector<std::string>& perPeriodPart = outputFSM.getPerPeriod();
@@ -167,6 +169,10 @@ void HLS::outputfile() {
 
 	// 将每一行写入文件
 	for (const auto& line : modulepart) {
+		output_file << line << std::endl;
+	}
+
+	for (const auto& line : regDefpart) {
 		output_file << line << std::endl;
 	}
 
@@ -201,6 +207,12 @@ void HLS::outputfile() {
   // 使用匈牙利算法或者最小代价匹配实现
 
   // 第六部分是控制逻辑综合，控制不同块之间的跳转，最终的代码逻辑的实现部分
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿#ifndef FSM_H
+﻿#ifndef FSM_H 
 #define FSM_H
 #include "ControlFlowGraph.h"
 #include "cycleTable.h"
@@ -13,14 +13,16 @@ private:
 	std::vector<std::string> FSMcode;
 	std::vector<std::string> CounterCode;
 	std::vector<std::string> perPeriodCode;
+	std::vector<std::string> regDef;
 public:
 	FSMachine();
 	// 类代理实现生成module块和有限状态机的转换
-	FSMachine(ControlFlowGraph &CFG, std::vector<std::vector<Cycle>> &Cycles);
+	FSMachine(ControlFlowGraph &CFG, std::vector<std::vector<Cycle>> &Cycles, std::vector<std::vector<std::pair<std::string, int>>>& REG);
 	std::vector<std::string>& getModule();
 	std::vector<std::string>& getFSM();
 	std::vector<std::string>& getCounter();
 	std::vector<std::string>& getPerPeriod();
+	std::vector<std::string>& getRegDef();
 	std::string getFilename();
 	std::unordered_map<std::string, std::string>& getStateMap() {
 		return stateMapping;
@@ -40,8 +42,11 @@ public:
 	// 生成end
 	void end(int i, std::vector<std::string>& code);
 	// 生成FSM
+	std::string opTrans(Statement m_statement, int& outregIndex, std::vector<std::pair<std::string, int>>& condInState, 
+		std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag);
 	void FSMgener(ControlFlowGraph &CFG);
 	void CounterGener(std::vector<std::vector<Cycle>> &Cycles, ControlFlowGraph &CFG);
 	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
+	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
 };
 #endif

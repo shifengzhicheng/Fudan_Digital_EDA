@@ -1,7 +1,7 @@
 ﻿#include "FSMachine.h"
 
 FSMachine::FSMachine() {}
-FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>> &Cycles)
+FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>> &Cycles, std::vector<std::vector<std::pair<std::string, int>>>& REG)
 {
     filename = CFG.getfuncname();
     std::string defination = std::string("module ");
@@ -11,6 +11,7 @@ FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>> &Cyc
     FSMgener(CFG);
     CounterGener(Cycles, CFG);
     perPeriodGener(Cycles, CFG);
+    regDefGener(REG);
 }
 
 std::vector<std::string>& FSMachine::getModule()
@@ -33,10 +34,16 @@ std::vector<std::string>& FSMachine::getPerPeriod()
     return perPeriodCode;
 }
 
+std::vector<std::string>& FSMachine::getRegDef()
+{
+    return regDef;
+}
+
 std::string FSMachine::getFilename()
 {
     return filename;
 }
+
 
 void FSMachine::IOdefinationAppend(int ret_type, std::vector<var>& vars)
 {
@@ -57,7 +64,7 @@ void FSMachine::IOdefinationAppend(int ret_type, std::vector<var>& vars)
     if (ret_type == RET_VOID) {
     }
     else if (ret_type == RET_INT) {
-        getModule().push_back("\toutput\tap_return,");
+        getModule().push_back("\toutput\t[31:0] ap_return,");
     }
     getModule().push_back("\tinput\tap_clk,");
     getModule().push_back("\tinput\tap_rst_n,");
@@ -66,6 +73,7 @@ void FSMachine::IOdefinationAppend(int ret_type, std::vector<var>& vars)
     getModule().push_back("\toutput\treg ap_done");
     getModule().push_back(");");
 }
+
 enum Istiming {
     iscomb,
     istiming
@@ -90,6 +98,226 @@ void FSMachine::begin(int i, std::vector<std::string>& code) {
 }
 void FSMachine::end(int i, std::vector<std::string>& code) {
     code.push_back(std::string(i, '\t') + std::string("end"));
+}
+
+std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vector<std::pair<std::string, int>>& condInState, 
+    std::string state, std::vector<std::string>& loadFlag, std::vector<std::string>& storeFlag)
+{
+    switch (m_statement.optype)
+    {
+    case OP_ASSIGN:
+    {
+        if (m_statement.regs[0] == -1)
+            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + m_statement.vars[0]);
+        else
+            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "reg_" + std::to_string(m_statement.regs[0]));
+    }
+    case OP_ADD:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " + " + oprand2);
+    }
+    case OP_SUB:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " - " + oprand2);
+    }
+    case OP_MUL:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " * " + oprand2);
+    }
+    case OP_DIV:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " / " + oprand2);
+    }
+    case OP_LOAD:
+    {
+        std::string str_var = m_statement.vars[0];
+        //std::string str_add = m_statement.vars[1];
+        std::string severalLine;
+        if (find(loadFlag.begin(), loadFlag.end(), str_var) == loadFlag.end())
+        {
+            loadFlag.push_back(str_var);
+            severalLine += ("\t\t" + str_var + "_ce0 <= 1;\n");
+            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]));
+        }
+        else
+        {
+            for (std::vector<std::string>::iterator iter = loadFlag.begin(); iter != loadFlag.end(); iter++)
+            {
+                if (*iter == str_var)
+                {
+                    loadFlag.erase(iter);
+                    break;
+                }
+            }
+                severalLine += ("\t\t" + str_var + "_ce0 <= 0;\n");
+                severalLine += ("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + str_var + "_q0");
+        }
+        return severalLine;
+        //return std::string("\t\ttest");
+    }
+    case OP_STORE:
+    {
+        std::string str_var = m_statement.vars[0];
+        std::string severalLine;
+        if (find(storeFlag.begin(), storeFlag.end(), str_var) == storeFlag.end())
+        {
+            storeFlag.push_back(str_var);
+            severalLine += ("\t\t" + str_var + "_we0 <= 1;\n");
+            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]));
+            severalLine += ("\t\t" + str_var + "_ad0 <= reg_" + std::to_string(m_statement.regs[2]));
+        }
+        else
+        {
+            for (std::vector<std::string>::iterator iter = storeFlag.begin(); iter != storeFlag.end(); iter++)
+            {
+                if (*iter == str_var)
+                {
+                    storeFlag.erase(iter);
+                    break;
+                }
+            }
+            severalLine += ("\t\t" + str_var + "_we0 <= 0;\n");
+        }
+        return severalLine;
+    }
+    case OP_BR:
+    {
+        break;
+    }
+    case OP_LT:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " < " + oprand2 + ")");
+    }
+    case OP_GT:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " > " + oprand2 + ")");
+    }
+    case OP_LE:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " <= " + oprand2 + ")");
+    }
+    case OP_GE:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " >= " + oprand2 + ")");
+    }
+    case OP_EQ:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " == " + oprand2 + ")");
+    }
+    case OP_PHI:
+    {
+        std::string oprand1, oprand2;
+        if (m_statement.regs[0] == -1)
+            oprand1 = m_statement.vars[0];
+        else
+            oprand1 = "reg_" + std::to_string(m_statement.regs[0]);
+        if (m_statement.regs[1] == -1)
+            oprand2 = m_statement.vars[1];
+        else
+            oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
+        std::string severalLine;
+        severalLine += ("\t\tif(" + std::string("LastState") + " == state_" + m_statement.label[0] + ")\n");
+        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + "\n");
+        severalLine += ("\t\telseif(" + std::string("LastState") + " == state_" + m_statement.label[1] + ")\n");
+        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand2);
+        return severalLine;
+    }
+    case OP_RET:
+    {
+        if (m_statement.outreg != -1)
+            outregIndex = m_statement.outreg;
+        break;
+    }
+    default:
+        return std::string();
+        break;
+    }
 }
 void FSMachine::FSMgener(ControlFlowGraph& CFG)
 {
@@ -176,7 +404,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
             else {
                 cond = std::string(
                     CurrentState + " == " + "state_" + CurEdge.From_Block
-                    + " & " + Branch_ready + " == " 
+                    + " & " + Branch_ready + " == "
                     + "1'b1 & cond == 1'b");
                 if (CurEdge.cond == IfTrue) cond.append("1");
                 else cond.append("0");
@@ -195,11 +423,14 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
 }
 void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG)
 {
-    CounterCode.push_back(std::string("reg[31:0] counter"));
+    CounterCode.push_back(std::string("\treg[31:0] counter;"));
     CounterCode.push_back(alwayslogic(istiming));
     begin(1, CounterCode);
     CounterCode.push_back(iflogic(std::string("!ap_rst_n")));
-    CounterCode.push_back("\t\t" + std::string("counter <= 0"));
+    begin(1, CounterCode);
+    CounterCode.push_back("\t\t" + std::string("counter <= 0;"));
+    CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
+    end(1, CounterCode);
     for (std::vector<graph_node>::iterator iter = CFG.getDFGNodes().begin(); iter != CFG.getDFGNodes().end(); iter++)
     {
         std::string cond;
@@ -207,35 +438,104 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
         cond += ("CurrentState == state_" + iter->DFG.get_label());
         cond += " && ";
         cond += ("counter == " + std::to_string(totalPeriod));
-        CounterCode.push_back(iflogic(cond));
-        CounterCode.push_back("\t\t" + std::string("counter <= 0"));
+        if (iter->DFG.get_label() == std::string("fiction_head"))
+            cond += (" && ap_start == 1'b1");
+        CounterCode.push_back(elseiflogic(cond));
+        begin(1, CounterCode);
+        CounterCode.push_back("\t\t" + std::string("counter <= 0;"));
+        CounterCode.push_back("\t\t" + std::string("branch_ready <= 1"));
+        end(1, CounterCode);
     }
     CounterCode.push_back(elselogic());
-    CounterCode.push_back("\t\t" + std::string("counter <= counter + 1"));
+    CounterCode.push_back("\t\t" + std::string("counter <= counter + 1;"));
     end(1, CounterCode);
+    CounterCode.push_back("\n");
 }
 void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG)
 {
     std::vector<std::string> toReg;
     std::vector<std::string> toWire;
+    int outregIndex = 0;
+    std::vector<std::pair<std::string, int>> condInState;
+    std::vector<std::string> loadFlag, storeFlag;
     toReg.push_back("\t" + std::string("always@(counter)"));
     toReg.push_back("\t" + std::string("case(CurrentState)"));
+    //toReg.push_back("\t" + CFG.getDFGNodes()[0].DFG.get_label() + ": begin");
     for (std::vector<graph_node>::iterator iter = CFG.getDFGNodes().begin() + 1; iter != CFG.getDFGNodes().end(); iter++)
     {
         std::string branch_state = "state_" + iter->DFG.get_label();
         toReg.push_back("\t" + branch_state + ": begin");
         int totalPeriod = iter->DFG.getPeriod();
         toReg.push_back("\t\t" + std::string("case(counter)"));
-        for (int i = 1; i <= totalPeriod; i++)
+        int block = iter - CFG.getDFGNodes().begin();
+        for (int i = 0; i < totalPeriod + 2; i++)
         {
-            toReg.push_back("\t\t32'b" + std::to_string(i) + ": begin");
-            toReg.push_back(std::string("test  test  test"));
+            toReg.push_back("\t\t32'd" + std::to_string(i) + ": begin");
+            if (i == 0)
+            {
+                for (std::vector<Statement>::iterator iter_statement = Cycles[block][i].Statements.begin();
+                    iter_statement != Cycles[block][i].Statements.end(); iter_statement++)
+                {
+                    std::string str_reg, str_mem;
+                    str_mem = "Mem_" + CFG.getDataSet()[iter_statement->regs[0]];
+                    str_reg = "reg_" + std::to_string(iter_statement->outreg);
+                    toReg.push_back("\t\t" + str_reg + " <= " + str_mem);
+                }
+            }
+            else if (i == totalPeriod + 1)
+            {
+                for (std::vector<Statement>::iterator iter_statement = Cycles[block][i].Statements.begin();
+                    iter_statement != Cycles[block][i].Statements.end(); iter_statement++)
+                {
+                    std::string str_reg, str_mem;
+                    str_mem = "Mem_" + CFG.getDataSet()[iter_statement->outreg];
+                    str_reg = "reg_" + std::to_string(iter_statement->regs[0]);
+                    toReg.push_back("\t\t" + str_mem + " <= " + str_reg);
+                }
+            }
+            else
+            {
+                for (std::vector<Statement>::iterator iter_statement = Cycles[block][i].Statements.begin();
+                    iter_statement != Cycles[block][i].Statements.end(); iter_statement++)
+                {
+                    std::string str = opTrans(*iter_statement, outregIndex, condInState, branch_state, loadFlag, storeFlag);
+                    if (!str.empty())
+                        toReg.push_back(str);
+                }
+            }
             end(2, toReg);
         }
         toReg.push_back("\t\t" + std::string("endcase"));
         end(1, toReg);
     }
     toReg.push_back("\t" + std::string("endcase"));
+    if (outregIndex)
+        toWire.push_back("\tassign ap_return = reg_" + std::to_string(outregIndex) + ";");
+    if (!condInState.empty())
+    {
+        std::string tmp;
+        tmp += "\tassign cond = ";
+        tmp += "((CurrentState == " + condInState[0].first + ") & reg_" + std::to_string(condInState[0].second) + ")";
+        for (std::vector<std::pair<std::string, int>>::iterator iter = condInState.begin() + 1; iter != condInState.end(); iter++)
+        {
+            tmp += " || ((CurrentState == " + iter->first + ") & reg_" + std::to_string(iter->second) + ")";
+        }
+        tmp += ";";
+        toWire.push_back(tmp);
+    }
     perPeriodCode.insert(perPeriodCode.end(), toReg.begin(), toReg.end());
     perPeriodCode.insert(perPeriodCode.end(), toWire.begin(), toWire.end());
+}
+void FSMachine::regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG)
+{
+    int regMax = 0;
+    for (std::vector<std::vector<std::pair<std::string, int>>>::iterator iter = REG.begin(); iter != REG.end(); iter++)
+    {
+        if (!iter->empty() && iter->back().second > regMax)
+            regMax = iter->back().second;
+    }
+    for (int i = 1; i <= regMax; i++)
+    {
+        regDef.push_back("\treg [31:0] reg_" + std::to_string(i));
+    }
 }
