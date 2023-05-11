@@ -180,6 +180,14 @@ DataFlowGraph::DataFlowGraph(basic_block& bb) {
 
         opList.push_back(CurNode);
     }
+    if (this->Branchs.empty()) {
+        statement newStatement;
+        newStatement.set_type(OP_BR);
+        newStatement.set_num_oprands(1);
+        newStatement.add_oprand("NOT_VALID");
+        opList.push_back(op(newStatement));
+        Branchs.push_back(BranchEdge());
+    }
     opList.push_back(op());
 }
 
