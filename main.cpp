@@ -9,7 +9,7 @@ int main() {
 	//      std::cout << "Usage:" << argv[0] << "filename\n";
 	//      return -1;
 	//  }
-	const std::string filename = "test.ll";
+	const std::string filename = "test1.ll";
 	parser p(filename);  // 创建解析器对象
 
 	if (p.parse() != 0) { // 执行解析，为0时解析成功
@@ -91,3 +91,27 @@ int main() {
 }
 
 
+//define int gcd(int a, int b)
+//c = a;
+//d = b;
+//
+//start:
+//a1 = phi(c, 0, divisor, cal);
+//b1 = phi(d, 0, remainder, cal);
+//a_LE_b = a1 >= b1;
+//br a_LE_b cal exchange;
+//
+//cal:
+//divisor = phi(b1, start, tempa, exchange);
+//larger = phi(a1, start, tempb, exchange);
+//remainder = larger - divisor;
+//cond = remainder == 0;
+//br cond ret start;
+//
+//exchange:
+//tempa = a1;
+//tempb = b1;
+//br cal;
+//
+//ret:
+//return divisor;

@@ -37,7 +37,8 @@ ControlFlowGraph::ControlFlowGraph(parser& p) {
         IndexofDFG[DFG.get_label()] = currentBlock;
         if (DFG.get_Branches().size()==1&& DFG.get_Branches()[0].To_Block.empty()) {
             std::string nextLabel = p.get_basic_blocks()[i + 1].get_label_name();
-            DFG.get_Branches().push_back(BranchEdge(DFG.get_label(), nextLabel, UnConditonal));
+            DFG.get_Branches()[0].From_Block = DFG.get_label();
+            DFG.get_Branches()[0].To_Block = nextLabel;
         }
         DFGs.push_back(graph_node(DFG));
         // 到这里已经完成了分支出度的边OutputEdge

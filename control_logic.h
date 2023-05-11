@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifndef CONTROL_H
 #define CONTROL_H
 #include <algorithm>
@@ -32,26 +32,19 @@ public:
 		return false;
 	}
 
-	// 设置当前寄存器中存储的值
-	bool setData(varPeriod data) {
-		for (std::vector<varPeriod>::iterator iter = all_reg_datas.begin(); iter != all_reg_datas.end(); iter++) {
-			if ((*iter).var == data.var) {
-				now_reg_data = data;
-				return true;
-			}
-		}
-		std::cout << "寄存器中没有存储过该变量！" << std::endl;
-		return false;
-	}
-
 	// 将变量存入寄存器中（添加存储的数据）
 	void addData(varPeriod var) {
 		all_reg_datas.push_back(var);
 	}
+
+	//// 返回该寄存器在不同周期会存储的所有变量
+	//std::vector<varPeriod> getAllDatas() {
+	//	return all_reg_datas;
+	//}
 };
 
 // 将ryh的pair结构转换为寄存器类
-void Pair2Register(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
+void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, std::vector<Register>& Regs) {
 	std::vector<varPeriod> varPeriods = graph2VarPeriods(DFG);
 	for (std::vector<std::pair<std::string, int>>::iterator iter = REG.begin(); iter != REG.end(); iter++) {
 		int flag = 0;			//用于表示是否已经添加过该寄存器
@@ -121,19 +114,24 @@ public:
 		if (flag == 0)
 			inputs = com[output_compute].Ainputregisters;
 		else
-			inputs = com[output_compute].Binputregisters;
+			inputs = com[output_compute].Binputregisters;	
 		mux_inputs = inputs;
 	}
 
-	//获取选择的输入寄存器下标
-	int getInput() {
-		return mux_selectInput;
-	}
+	////添加输入数据,input为添加的寄存器的下标
+	//void addInput(int input) {
+	//	mux_inputs.push_back(input);
+	//}
 
-	//获取所有的输入寄存器下标
-	std::vector<int> getAllInput() {
-		return mux_inputs;
-	}
+	////获取选择的输入寄存器下标
+	//int getInput() {
+	//	return mux_selectInput;
+	//}
+
+	////获取所有的输入寄存器下标
+	//std::vector<int> getAllInput() {
+	//	return mux_inputs;
+	//}
 
 	//获取选择器连接到的计算资源
 	int getCompute() {
@@ -141,15 +139,15 @@ public:
 	}
 
 	bool chooseReg(int cycle, DataFlowGraph dfg, std::vector<Register> REGs,
-		std::vector<std::pair<std::string, int>> REGi,
-		std::vector<std::pair<int, int>> CSP,
-		std::vector<computeresource> com,
-		Register& reg, std::string& _var) {
+				std::vector<std::pair<std::string, int>> REGi,
+				std::vector<std::pair<int, int>> CSP,
+				std::vector<computeresource> com,
+				Register& reg, std::string& _var) {
 		reg.reg_index = -1;		//先设置默认值，如果最后该周期未找到则表示选择器当前周期是空闲的
 		_var = "NULL";
 		std::vector<node> List = dfg.get_opList();
 		std::vector<int> curDFGinput;
-
+	
 		//首先遍历选择器输入端,选出当前块下会使用到的所有寄存器
 		for (int i = 0; i < REGs.size(); i++) {
 			int index = REGs[i].reg_index;
@@ -162,15 +160,13 @@ public:
 		for (int i = 0; i < curDFGinput.size(); i++) {
 			varPeriod v;
 			if (REGs[curDFGinput[i] - 1].getData(cycle, v)) {	//该寄存器在当前周期存储着变量
-				std::cout << v.var << std::endl;
 				//接下来需要判断这个变量是否是在当前选择器所连接的计算资源中被使用
 				for (std::vector<std::pair<int, int>>::iterator iter = CSP.begin(); iter != CSP.end(); iter++) {
 					if (iter->second == output_compute) {
 						//计算资源匹配上了，看对应node的输入变量是否包括此时寄存器中存储的变量v
-						std::vector<std::string> input = List[iter->first + 1].InputVar;
+						std::vector<std::string> input = List[iter->first+1].InputVar;
 						//实际上输入列表最多只有两个变量
 						for (int j = 0; j < input.size(); j++) {
-							std::cout << "变量名为：" << v.var << "    input为：" << input[j] << std::endl;
 							if (input[j] == v.var) {
 								//成功找到
 								reg = REGs[curDFGinput[i] - 1];
@@ -192,8 +188,8 @@ private:
 	std::vector<Mux> Muxs;					//所有的选择器
 	DataFlowGraph DFG;						//表示当前控制器是处在哪一块中的
 	std::vector<std::pair<int, int>> CSP;	//计算资源匹配结果
-	std::vector<computeresource> Compute;
-	//std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
+	std::vector<computeresource> Compute;				
+	std::vector<std::pair<cycletable, int>> CycleTables;	//存储的是每个周期活跃的变量、与其相关的寄存器和选择器
 	std::vector<Cycle> C;
 
 public:
@@ -216,44 +212,34 @@ public:
 		}
 	}
 
-	//添加寄存器
-	void addReg(Register reg) {
-		Regs.push_back(reg);
+	void generateTables(std::vector<std::pair<std::string, int>> _REG) {
+		int cycle;		//所处周期，遍历使用
+		std::vector<varPeriod> V = graph2VarPeriods(DFG);
+		sort(V.begin(), V.end(), varPeridCmp_stop);
+		int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
+
+		for (cycle = 1; cycle <= total_cycle; cycle++) {
+			//对每个选择器进行遍历，记录其选择的寄存器输入数据到table中
+			for (int i = 0; i < Muxs.size(); i++) {
+				Register r;
+				std::string var;
+				if (Muxs[i].chooseReg(cycle, DFG, Regs, _REG, CSP, Compute, r, var)) {
+					cycletable t;
+					t.mux = i;
+					t.reg = r.reg_index;
+					t.var = var;
+					t.com = Muxs[i].getCompute();
+					CycleTables.push_back(std::make_pair(t, cycle));
+				}
+			}
+		}
 	}
-
-	//添加选择器
-	void addMux(Mux mux) {
-		Muxs.push_back(mux);
-	}
-
-	//void generateTables(std::vector<std::pair<std::string, int>> _REG) {
-	//	int cycle;		//所处周期，遍历使用
-	//	std::vector<varPeriod> V = graph2VarPeriods(DFG);
-	//	sort(V.begin(), V.end(), varPeridCmp_stop);
-	//	int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
-
-	//	for (cycle = 1; cycle <= total_cycle; cycle++) {
-	//		//对每个选择器进行遍历，记录其选择的寄存器输入数据到table中
-	//		for (int i = 0; i < Muxs.size(); i++) {
-	//			Register r;
-	//			std::string var;
-	//			if (Muxs[i].chooseReg(cycle, DFG, Regs, _REG, CSP, Compute, r, var)) {
-	//				cycletable t;
-	//				t.mux = i;
-	//				t.reg = r.reg_index;
-	//				t.var = var;
-	//				t.com = Muxs[i].getCompute();
-	//				CycleTables.push_back(std::make_pair(t, cycle));
-	//			}
-	//		}
-	//	}
-	//}
 
 	void generateCycles(std::vector<std::pair<std::string, int>> _REG, ControlFlowGraph CFG) {
-		std::vector<varPeriod> V = graph2VarPeriods(DFG);
-		if (V.empty())
-			return;
-		else {
+		//std::vector<varPeriod> V = graph2VarPeriods(DFG);
+		//if (V.empty())
+		//	return;
+		//else {
 			//sort(V.begin(), V.end(), varPeridCmp_stop);
 			//int total_cycle = V[V.size() - 1].stopp;		//最后一个变量的终止周期
 			//sort()
@@ -267,15 +253,16 @@ public:
 				Statement statement;
 				statement.compute_resource_index = -1;
 				//对于ASSIGN、BR、RET、LOAD、STORE、PHI指令，需要另外处理
+				//BR指令为跳转指令，只会出现在块的最后一个周期。
+				//在这一周期中，将将要传出的数据转存到CFG的MEM中。
 				if (List[i].element.getOPtype() == OP_BR) {
-					if (List[i].element.getInputvars().size() == 3) {
-						statement.optype = OP_BR;
-						statement.vars = List[i].InputVar;
-						statement.outreg = findregister(_REG, statement.vars[0]);
-
-						/*for (int j = List[i].getTstart(); j <= List[i].getTend(); j++)
-							cycle[j].Statements.push_back(statement);*/
-						cycle[List[i].getTstart()].Statements.push_back(statement);
+					for (int m = 0; m < DFG.get_outputList().size(); m++) {
+						Statement temp;
+						temp.optype = OP_BR;
+						temp.vars.push_back(DFG.get_outputList()[m].OutBlockVarName);
+						temp.regs.push_back(findregister(_REG, temp.vars[0]));
+						temp.outreg = CFG.Memtable()[temp.vars[0]];
+						cycle[total_cycle + 1].Statements.push_back(temp);
 					}
 				}
 				else if (List[i].element.getOPtype() == OP_RET) {
@@ -363,9 +350,9 @@ public:
 					statement.regs = regs;
 					statement.vars = inputvars;
 
-					/*for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
-						cycle[l].Statements.push_back(statement);
-					}*/
+					//for (int l = List[i].getTstart(); l <= List[i].getTend(); l++) {
+					//	cycle[l].Statements.push_back(statement);
+					//}
 					cycle[List[i].getTstart()].Statements.push_back(statement);
 					num_node++;
 				}
@@ -373,7 +360,6 @@ public:
 
 			//第零周期，将存在CFG的MEM中的值传输给对应的寄存器
 			for (int m = 0; m < DFG.get_inputList().size(); m++) {
-				int insize = DFG.get_inputList().size();
 				std::string tempstr = DFG.get_inputList()[m].InputBlockVarName;
 				if (findstr(CFG.getDataSet(), tempstr)) {
 					Statement temp;
@@ -384,26 +370,35 @@ public:
 				}
 			}
 
-			//最后一个周期+1，将将要传出的数据转存到CFG的MEM中。
-			for (int m = 0; m < DFG.get_outputList().size(); m++) {
-				int outsize = DFG.get_outputList().size();
-				Statement temp;
-				temp.vars.push_back(DFG.get_outputList()[m].OutBlockVarName);
-				temp.regs.push_back(findregister(_REG, temp.vars[0]));
-				temp.outreg = CFG.Memtable()[temp.vars[0]];
-				cycle[cycle.size() - 1].Statements.push_back(temp);
-			}
+			////最后一个周期+1，将将要传出的数据转存到CFG的MEM中。
+			//for (int m = 0; m < DFG.get_outputList().size(); m++) {
+			//	int outsize = DFG.get_outputList().size();
+			//	Statement temp;
+			//	temp.optype = OP_BR;
+			//	temp.vars.push_back(DFG.get_outputList()[m].OutBlockVarName);
+			//	temp.regs.push_back(findregister(_REG, temp.vars[0]));
+			//	temp.outreg = CFG.Memtable()[temp.vars[0]];
+			//	cycle[cycle.size() - 1].Statements.push_back(temp);
+			//}
 
 			C = cycle;
-		}
+		//}
 	}
 
 	std::vector<Cycle> getCycle() {
 		return C;
 	}
 
-	//std::vector<std::pair<cycletable, int>> getCycleTables() {
-	//	return CycleTables;
+	std::vector<std::pair<cycletable, int>> getCycleTables() {
+		return CycleTables;
+	}
+
+	//std::vector<Mux> getMuxs() {
+	//	return Muxs;
+	//}
+
+	//std::vector<Register> getRegs() {
+	//	return Regs;
 	//}
 };
 #endif

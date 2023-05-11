@@ -376,6 +376,7 @@ void FSMachine::FSMgener(ControlFlowGraph& CFG)
     begin(2, FSMcode);
     getFSM().push_back(tabs + LastState + " <= " + "state_fiction_head;");
     getFSM().push_back(tabs + CurrentState + " <= " + "state_fiction_head;");
+    getFSM().push_back(tabs + "ap_done <= 1'b0;");
     end(2, FSMcode);
 
     // 其他状态跳转的生成逻辑
@@ -438,7 +439,7 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
     for (std::vector<graph_node>::iterator iter = CFG.getDFGNodes().begin(); iter != CFG.getDFGNodes().end(); iter++)
     {
         std::string cond;
-        int totalPeriod = iter->DFG.getPeriod();
+        int totalPeriod = iter->DFG.getPeriod() + 1;
         cond += ("CurrentState == state_" + iter->DFG.get_label());
         cond += " && ";
         cond += ("counter == " + std::to_string(totalPeriod));
@@ -473,7 +474,7 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
         int totalPeriod = iter->DFG.getPeriod();
         toReg.push_back("\t\t" + std::string("case(counter)"));
         int block = iter - CFG.getDFGNodes().begin();
-        for (int i = 0; i <= totalPeriod; i++)
+        for (int i = 0; i <= totalPeriod + 1; i++)
         {
             toReg.push_back("\t\t32'd" + std::to_string(i) + ": begin");
             if (i == 0)
@@ -508,6 +509,8 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
                         toReg.push_back(str);
                 }
             }
+            if (i == totalPeriod + 1)
+                toReg.push_back("\t\tbranch_ready <= 1;");
             end(2, toReg);
         }
         toReg.push_back("\t\t" + std::string("endcase"));

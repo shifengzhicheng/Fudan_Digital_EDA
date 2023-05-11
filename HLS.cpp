@@ -154,7 +154,7 @@ void HLS::genFSM()
 
 void HLS::outputfile() {
 	std::string filename = outputFSM.getFilename();
-	std::string filepath("test/" + filename + ".v");
+	std::string filepath("testfile/" + filename + ".v");
 	std::vector<std::string>& modulepart = outputFSM.getModule();
 	std::vector<std::string>& regDefpart = outputFSM.getRegDef();
 	std::vector<std::string>& FSMpart = outputFSM.getFSM();
