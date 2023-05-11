@@ -108,9 +108,9 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
     case OP_ASSIGN:
     {
         if (m_statement.regs[0] == -1)
-            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + m_statement.vars[0]);
+            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + m_statement.vars[0]+";");
         else
-            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "reg_" + std::to_string(m_statement.regs[0]));
+            return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "reg_" + std::to_string(m_statement.regs[0]) + ";");
     }
     case OP_ADD:
     {
@@ -123,7 +123,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
             oprand2 = m_statement.vars[1];
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " + " + oprand2);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " + " + oprand2 + ";");
     }
     case OP_SUB:
     {
@@ -136,7 +136,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
             oprand2 = m_statement.vars[1];
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " - " + oprand2);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " - " + oprand2 + ";");
     }
     case OP_MUL:
     {
@@ -149,7 +149,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
             oprand2 = m_statement.vars[1];
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " * " + oprand2);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " * " + oprand2 + ";");
     }
     case OP_DIV:
     {
@@ -162,7 +162,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
             oprand2 = m_statement.vars[1];
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " / " + oprand2);
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + " / " + oprand2 + ";");
     }
     case OP_LOAD:
     {
@@ -173,7 +173,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         {
             loadFlag.push_back(str_var);
             severalLine += ("\t\t" + str_var + "_ce0 <= 1;\n");
-            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]));
+            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]) + ";");
         }
         else
         {
@@ -186,7 +186,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
                 }
             }
                 severalLine += ("\t\t" + str_var + "_ce0 <= 0;\n");
-                severalLine += ("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + str_var + "_q0");
+                severalLine += ("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + str_var + "_q0;");
         }
         return severalLine;
         //return std::string("\t\ttest");
@@ -199,8 +199,8 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         {
             storeFlag.push_back(str_var);
             severalLine += ("\t\t" + str_var + "_we0 <= 1;\n");
-            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]));
-            severalLine += ("\t\t" + str_var + "_ad0 <= reg_" + std::to_string(m_statement.regs[2]));
+            severalLine += ("\t\t" + str_var + "_address0 <= reg_" + std::to_string(m_statement.regs[1]) + ";\n");
+            severalLine += ("\t\t" + str_var + "_ad0 <= reg_" + std::to_string(m_statement.regs[2]) + ";");
         }
         else
         {
@@ -212,7 +212,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
                     break;
                 }
             }
-            severalLine += ("\t\t" + str_var + "_we0 <= 0;\n");
+            severalLine += ("\t\t" + str_var + "_we0 <= 0;");
         }
         return severalLine;
     }
@@ -232,7 +232,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " < " + oprand2 + ")");
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " < " + oprand2 + ");");
     }
     case OP_GT:
     {
@@ -246,7 +246,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " > " + oprand2 + ")");
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " > " + oprand2 + ");");
     }
     case OP_LE:
     {
@@ -260,7 +260,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " <= " + oprand2 + ")");
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " <= " + oprand2 + ");");
     }
     case OP_GE:
     {
@@ -274,7 +274,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " >= " + oprand2 + ")");
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " >= " + oprand2 + ");");
     }
     case OP_EQ:
     {
@@ -288,7 +288,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         else
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         condInState.push_back(std::pair<std::string, int>(state, m_statement.outreg));
-        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " == " + oprand2 + ")");
+        return std::string("\t\treg_" + std::to_string(m_statement.outreg) + " <= " + "(" + oprand1 + " == " + oprand2 + ");");
     }
     case OP_PHI:
     {
@@ -303,9 +303,9 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
             oprand2 = "reg_" + std::to_string(m_statement.regs[1]);
         std::string severalLine;
         severalLine += ("\t\tif(" + std::string("LastState") + " == state_" + m_statement.label[0] + ")\n");
-        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + "\n");
-        severalLine += ("\t\telseif(" + std::string("LastState") + " == state_" + m_statement.label[1] + ")\n");
-        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand2);
+        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand1 + ";\n");
+        severalLine += ("\t\telse if(" + std::string("LastState") + " == state_" + m_statement.label[1] + ")\n");
+        severalLine += ("\t\t\treg_" + std::to_string(m_statement.outreg) + " <= " + oprand2 + ";");
         return severalLine;
     }
     case OP_RET:
@@ -443,7 +443,7 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
         CounterCode.push_back(elseiflogic(cond));
         begin(1, CounterCode);
         CounterCode.push_back("\t\t" + std::string("counter <= 0;"));
-        CounterCode.push_back("\t\t" + std::string("branch_ready <= 1"));
+        CounterCode.push_back("\t\t" + std::string("branch_ready <= 1;"));
         end(1, CounterCode);
     }
     CounterCode.push_back(elselogic());
@@ -479,7 +479,7 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
                     std::string str_reg, str_mem;
                     str_mem = "Mem_" + CFG.getDataSet()[iter_statement->regs[0]];
                     str_reg = "reg_" + std::to_string(iter_statement->outreg);
-                    toReg.push_back("\t\t" + str_reg + " <= " + str_mem);
+                    toReg.push_back("\t\t" + str_reg + " <= " + str_mem + ";");
                 }
             }
             else if (i == totalPeriod + 1)
@@ -490,7 +490,7 @@ void FSMachine::perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlF
                     std::string str_reg, str_mem;
                     str_mem = "Mem_" + CFG.getDataSet()[iter_statement->outreg];
                     str_reg = "reg_" + std::to_string(iter_statement->regs[0]);
-                    toReg.push_back("\t\t" + str_mem + " <= " + str_reg);
+                    toReg.push_back("\t\t" + str_mem + " <= " + str_reg + ";");
                 }
             }
             else
@@ -536,6 +536,6 @@ void FSMachine::regDefGener(std::vector<std::vector<std::pair<std::string, int>>
     }
     for (int i = 1; i <= regMax; i++)
     {
-        regDef.push_back("\treg [31:0] reg_" + std::to_string(i));
+        regDef.push_back("\treg [31:0] reg_" + std::to_string(i)+";");
     }
 }
