@@ -1,4 +1,4 @@
-#include "schedule.h"
+﻿#include "schedule.h"
 
 //硬件资源考虑只有两个加法器、一个乘法器、一个SRAM、一个跳转和一个除法器
 //load/store不可同时进行，比较判断需要使用加法器
@@ -223,7 +223,7 @@ bool cmp(const std::pair<int, int>& a, const std::pair<int, int>& b) {
 }
 
 void improved_table_schedule_forDFG(DataFlowGraph& DFG) {
- 
+
     Period_Rec REC(DFG);
     ASAP(DFG, REC);
     ALAP(DFG, REC);
@@ -276,7 +276,7 @@ void improved_table_schedule_forDFG(DataFlowGraph& DFG) {
         //将可调度的进行调度，并设为已访问
         for (auto itera = tq.begin(); itera != tq.end(); itera++) {
             if (DFG.Mark[itera->first] == SCHEDULED) {}
-            else{
+            else {
                 if (meet_resources_constraint(hardware_default, itera->first, DFG)) {
                     DFG.get_opList()[itera->first].T_start = current_period;
                     DFG.get_opList()[itera->first].T_end = current_period + DFG.get_opList()[itera->first].element.getLatency() - 1;

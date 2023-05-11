@@ -1,4 +1,4 @@
-#ifndef LEFT_H
+﻿#ifndef LEFT_H
 #define LEFT_H
 #include <algorithm>
 #include "dataflowgraph.h"
@@ -48,6 +48,8 @@ bool isPureNumber(std::string str)
         if (!std::isdigit(c)) {
             isPureNumber = false;
             break;
+
+
         }
     }
     return isPureNumber;
@@ -60,26 +62,36 @@ std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG)
     std::unordered_map<std::string, int> m_map = DFG.myOutvartable();
     std::unordered_map<std::string, int> varMap;
     std::vector<varPeriod> varPeriods;
+    std::vector<std::string> mouduleInput;
+    for (std::vector<InputEdge>::iterator iter = DFG.get_inputList().begin(); iter != DFG.get_inputList().end(); iter++)
+        if (iter->From_Block == std::string("fiction_head"))
+            mouduleInput.push_back(iter->InputBlockVarName);
     for (std::vector<node>::iterator iter = m_ops.begin(); iter != m_ops.end(); iter++)
     {
         std::vector<std::string> m_inputVars = (*iter).InputVar;
         for (std::vector<std::string>::iterator varIter = m_inputVars.begin(); varIter != m_inputVars.end(); varIter++)
         {
-            if (varMap.find(*varIter) != varMap.end())
+            if (find(mouduleInput.begin(), mouduleInput.end(), *varIter) == mouduleInput.end())
             {
-                if (varMap[*varIter] < (*iter).getTend())
+                if (varMap.find(*varIter) != varMap.end())
+                {
+                    if (varMap[*varIter] < (*iter).getTend())
+                        varMap[*varIter] = (*iter).getTend();
+                }
+                else if (!isPureNumber(*varIter))
                     varMap[*varIter] = (*iter).getTend();
             }
-            else if (!isPureNumber(*varIter))
-                varMap[*varIter] = (*iter).getTend();
         }
     }
     for (std::unordered_map<std::string, int>::iterator miter = m_map.begin(); miter != m_map.end(); miter++)
     {
         std::string var = (*miter).first;
-        int startp = m_ops[(*miter).second].getTend() + 1;
-        int endp = varMap[var];
-        varPeriods.push_back(varPeriod{ var, startp, endp });
+        if (find(mouduleInput.begin(), mouduleInput.end(), var) == mouduleInput.end())
+        {
+            int startp = m_ops[(*miter).second].getTend() + 1;
+            int endp = varMap[var];
+            varPeriods.push_back(varPeriod{ var, startp, endp });
+        }  
     }
     return varPeriods;
 }

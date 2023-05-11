@@ -1,4 +1,4 @@
-#ifndef HLS_H
+﻿#ifndef HLS_H
 #define HLS_H
 #include "parser.h"
 #include "dataflowgraph.h"
@@ -9,11 +9,12 @@
 #include "FSMachine.h"
 class HLS {
 private:
+	std::string _generated_rtl_code;
 	// parser
 	parser parsered;
-	// CFG控制流图
+	// CFG
 	ControlFlowGraph CFG;
-	// REG寄存器分配结果
+	// REG
 	std::vector<std::vector<std::pair<std::string, int>>> REG;
 	//计算资源（包括加法器、乘法器和除法器）
 	std::vector<computeresource> COR;
@@ -29,17 +30,35 @@ public:
 	ControlFlowGraph& getCFG() {
 		return CFG;
 	}
-	std::vector<std::vector<std::pair<std::string, int>>>& getREG() {
+	std::vector<std::vector<std::pair<std::string, int>>> getREG() {
 		return REG;
 	}
-	std::vector<computeresource>& getCOR() {
-		return COR;
+	// 执行转换操作
+	void convert() {
+
+		// 执行图的生成
+		generate_CFG();
+
+		// 执行调度
+		perform_scheduling();
+
+		// 执行寄存器分配和绑定
+		perform_register_allocation_and_binding();
+
+		// 实现运算资源的分配与绑定
+		perform_calculate_allocation_and_binding();
+
+		// 构建控制逻辑
+		synthesize_control_logic();
+
 	}
-	std::vector<std::vector<std::pair<int, int>>>& getCSP() {
-		return CSP;
-	}
-	std::vector<std::vector<Cycle>>& getCycles() {
-		return Cycles;
+
+	// 生成RTL操作方法
+	void generate_rtl_operations() const;
+
+	// 获取生成的RTL代码
+	std::string getRTLCode() const {
+		return _generated_rtl_code;
 	}
 	// 内部方法
 	// 实现图的生成

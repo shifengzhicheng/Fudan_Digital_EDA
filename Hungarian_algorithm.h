@@ -1,4 +1,4 @@
-#ifndef HUNGARIAN_H
+﻿#ifndef HUNGARIAN_H
 #define HUNGARIAN_H
 #include"leftAlgorithm.h"
 #include"computeresource.h"

@@ -1,4 +1,4 @@
-# include "parser.h"
+﻿# include "parser.h"
 # include "HLS.h"
 # include <iostream>
 
@@ -64,7 +64,7 @@ int main() {
 	// 生成数据流图和控制流图
 	hls.generate_CFG();
 	// 获得DFG节点
-	hls.setTestTime();
+	//hls.setTestTime();
 	hls.travelaround();
 	hls.travelback();
 	hls.perform_scheduling();

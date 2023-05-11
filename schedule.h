@@ -1,4 +1,4 @@
-#ifndef SCHEDULE_H
+﻿#ifndef SCHEDULE_H
 #define SCHEDULE_H
 #include <algorithm>
 #include "dataflowgraph.h"

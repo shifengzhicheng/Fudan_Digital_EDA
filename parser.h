@@ -1,25 +1,25 @@
-#ifndef PARSER_H
+﻿#ifndef PARSER_H
 #define PARSER_H
 #include <fstream> // 包含文件流头文件
 #include <string>  // 包含字符串头文件
 #include <vector>  // 包含向量头文件
 
 enum OP_TYPE {
-	OP_ASSIGN,  // 赋值操作
-	OP_ADD,     // 加法操作
-	OP_SUB,     // 减法操作
-	OP_MUL,     // 乘法操作
-	OP_DIV,     // 除法操作
-	OP_LOAD,    // 载入操作
-	OP_STORE,   // 存储操作
-	OP_BR,      // 分支操作
-	OP_LT,      // 小于操作
-	OP_GT,      // 大于操作
-	OP_LE,      // 小于等于操作
-	OP_GE,      // 大于等于操作
-	OP_EQ,      // 等于操作
-	OP_PHI,     // Phi 操作
-	OP_RET      // 返回操作
+	OP_ASSIGN,  // 赋值操作 0
+	OP_ADD,     // 加法操作 1
+	OP_SUB,     // 减法操作 2
+	OP_MUL,     // 乘法操作 3
+	OP_DIV,     // 除法操作 4
+	OP_LOAD,    // 载入操作 5
+	OP_STORE,   // 存储操作 6
+	OP_BR,      // 分支操作 7
+	OP_LT,      // 小于操作 8
+	OP_GT,      // 大于操作 9
+	OP_LE,      // 小于等于操作 10
+	OP_GE,      // 大于等于操作 11
+	OP_EQ,      // 等于操作 12
+	OP_PHI,     // Phi 操作 13
+	OP_RET      // 返回操作 14
 };
 
 enum RET_TYPE { // 返回类型枚举

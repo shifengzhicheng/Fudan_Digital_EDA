@@ -1,4 +1,4 @@
-#ifndef DATAFLOWGRAPH_H
+﻿#ifndef DATAFLOWGRAPH_H
 #define DATAFLOWGRAPH_H
 #include "parser.h"
 #include "unordered_map"
@@ -110,6 +110,10 @@ class node {
 		void setTend(int CurrentT) {
 			T_end = CurrentT;
 		}
+		// 操作绑定的寄存器
+		void bindregister();
+		// 操作绑定的运算资源
+		void bindCacRes();
 };
 
 enum CONDTYPE {
@@ -208,7 +212,8 @@ class DataFlowGraph {
 		std::vector<int> InVertex;
 		// 用于标记节点当前的出度
 		std::vector<int> OutVertex;
-		// DFG的创建
+		// DFG所需要的总周期
+		
 		DataFlowGraph(basic_block& bb);
 		
 		DataFlowGraph() {
@@ -243,7 +248,6 @@ class DataFlowGraph {
 		std::vector<InputEdge>& get_inputList() {
 			return inputList;
 		}
-		// 块的输出变量列表
 		std::vector<OutputEdge>& get_outputList() {
 			return outputList;
 		}

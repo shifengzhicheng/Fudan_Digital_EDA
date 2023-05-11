@@ -434,7 +434,7 @@ void FSMachine::CounterGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlo
     for (std::vector<graph_node>::iterator iter = CFG.getDFGNodes().begin(); iter != CFG.getDFGNodes().end(); iter++)
     {
         std::string cond;
-        int totalPeriod = iter->DFG.getPeriod();
+        int totalPeriod = iter->DFG.getPeriod() + 2;
         cond += ("CurrentState == state_" + iter->DFG.get_label());
         cond += " && ";
         cond += ("counter == " + std::to_string(totalPeriod));
