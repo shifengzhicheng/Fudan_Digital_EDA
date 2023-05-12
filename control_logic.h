@@ -1,9 +1,11 @@
-#pragma once
 #ifndef CONTROL_H
 #define CONTROL_H
 #include <algorithm>
+#include <iostream>
+#include "cycleTable.h"
 #include "Hungarian_algorithm.h"
 #include "dataflowgraph.h"
+#include "controlflowgraph.h"
 
 bool varPeridCmp_stop(varPeriod a, varPeriod b)
 {
