@@ -117,14 +117,21 @@ void HLS::perform_register_allocation_and_binding() {
 	}
 }
 void HLS::perform_calculate_allocation_and_binding() {
-	std::vector<std::vector<std::pair<std::string, int>>> REG1 = getREG();
+	//std::vector<std::vector<std::pair<std::string, int>>> REG1 = getREG();
 	std::vector<graph_node> DFGS = CFG.getDFGNodes();
 	std::vector<computeresource> CORE;
-	std::vector<std::vector<std::pair<std::string, int>>>::iterator iter2 = REG.begin();
-	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++)
-	{
-		CSP.push_back(bindcomputeresource((iter->DFG), *iter2, CORE));
-		iter2++;
+	
+	int i = 0;
+	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++){
+		Hardware hardware;
+		CSP.push_back(bindcomputeresource((iter->DFG), REG[i], CORE, hardware));
+		i++;
+		std::cout << std::endl;
+	}
+	i = 0;
+	//绑定输出寄存器
+	for (; i < CSP.size(); i++) {
+		bindoutputregister(DFGS[i].DFG, REG[i], CORE, CSP[i]);
 	}
 	COR = CORE;
 }

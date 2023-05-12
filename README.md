@@ -393,11 +393,10 @@ void HLS::generate_CFG() {
 ### Part 3完成寄存器的绑定
 
 ### Part 4完成计算资源的绑定
-
 此部分由沈笑涵同学完成。
 本部分使用了hls.h中各块内的寄存器与变量的绑定结果REG、和各块DFG中存储node计算结点的opList信息。
 
-其基本思想是Latency约束下的最小资源约束，通过逐个遍历opList中的node信息和对应输入输出变量的寄存器绑定结果，按照应该使用的计算资源类别和输出寄存器编号进行划分，并按照优化目标——输入寄存器的硬件复杂程度最低的标准（即计算资源输入端数据选择器数据选择端数目最低）进行计算资源与计算节点的绑定，并完成输入寄存器的绑定。
+其基本思想是利用匈牙利算法，按照各块的拓扑排序遍历结果，对同一时刻入度为0的所有结点进行硬件资源的匹配。其中，生成的代价矩阵值为匹配该计算结点所额外增加的硬件代价。通过对矩阵的多次迭代，得到代价最低的硬件资源匹配结果，并按照硬件资源分配结果绑定输入输出寄存器。
 
 #### 函数及文件说明
 `├── HLS.h `
@@ -430,7 +429,7 @@ void HLS::generate_CFG() {
 		//右边输入寄存器
 		std::vector<int> Binputregisters;
 		//输出寄存器
-		int outputregister;
+		std::vector<int> outputregisters;
 		//构造函数
 		computeresource(int flag1, int outputreg);
 		//绑定计算资源左输入寄存器
@@ -442,26 +441,19 @@ void HLS::generate_CFG() {
 			Binputregisters.push_back(reg);
 		}
 		//绑定计算资源输出寄存器
-		void setoutputregister(int reg) {
-			if (outputregister != -1) {
-				//std::cout << "output register has already set! error" << std::endl;
-				return;
-			}
-			else {
-				outputregister = reg;
-			}
-		}
+		void setoutputregister(int reg)；
 		//查找计算资源左输入端绑定寄存器
 		bool findareg(int reg);
 		//查找计算资源右输入端绑定寄存器
 		bool findbreg(int reg);
+		//查找计算资源输出端绑定寄存器
+		bool findoutreg(int reg);
 	}
 ```
 主要介绍一些定义的想法：
 
-`std::vector<int> Ainputregisters`：计算资源输入端绑定的寄存器一般不止一个，因此通过vector向量存储；
+`std::vector<int> Ainputregisters`：计算资源输入端、输出端绑定的寄存器一般不止一个，因此通过vector向量存储；
 
-`int outputregister`：一般来说，计算资源输出端仅绑定一个输出寄存器。因此在定义计算资源时，输出端寄存器用一个int变量存储（这可以用来作为判定计算资源是否可以绑定某一计算结点的依据）。
 
 ##### 查找每一个块中计算结点node与寄存器绑定结果
 
@@ -485,17 +477,35 @@ void HLS::generate_CFG() {
 
 ##### 函数接口：
 ```c++
-	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE) 
+	//实现计算资源与计算结点的绑定
+	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE);
+	//实现将输出寄存器与计算资源输出端绑定
+	void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi);
 ```
 #### 技术细节：
 
-1.	对每个DFG块中的node结点的Optype进行划分，赋值操作不分配计算资源（Optype = 0），Optype = 3(乘法运算)匹配乘法器，Optype = 4（除法运算）匹配除法器，剩下除了跳转指令和返回指令（该指令均由状态机跳转完成）之外的所有Optype值的操作匹配加法器（该加法器认为可以完成加法操作和减法操作，其中减法操作的实现可以将被减数转为补码后再相加得到，该步骤应由写入寄存器操作完成）。
+1.初始时生成一个队列，队列中压入目前状态下的所有入度为0的所有结点（即没有数据依赖的所有结点），并按照所需计算资源的种类（加法器、乘法器、除法器）分类，并将结果存储在三个vector迭代器中
 
-2.	对按计算资源分类后的node结点，优先匹配已经实例化的空闲计算资源。通过遍历COR中计算资源信息，判断计算资源输出寄存器是否符合该node输出变量分配的寄存器，并同时进行时序判断。若实现匹配，则进入计算资源输入端绑定寄存器步骤；若无符合条件计算资源匹配，则增加相应计算资源。 
+2.分别对三个vector迭代器进行操作，统计每个计算结点在不同编号的对应计算资源绑定的代价，从而生成匈牙利算法中的代价矩阵。这里，我考虑的代价为该计算资源为了绑定某一计算结点所额外增加的输入端数据选择器的输入个数：如果某一计算资源的两个输入变量分配的寄存器均未与该计算资源相连，那么其代价为2；若输入变量所在寄存器中有一个与该计算资源相连，那么代价为1；如果该计算结点两个输入寄存器均与该计算资源绑定，那么代价为0。该操作在以下函数中生成：
+```c++
+	std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,std::vector<int>list, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE,int flag,Hardware&hardware);
+```
 
-3.	对绑定的计算资源的输入端进行输入寄存器绑定。其中由于除法运算本身两变量存在差异（除数与被除数），因此对应计算资源左输入端和右输入端并不对称。而对于加法器和乘法器，优先判断其输入寄存器是否已经与该计算资源匹配，若未完全匹配，则按照代价最低原则（硬件电路的复杂度最低）将其输入寄存器与计算资源输入端进行绑定。
+3.利用匈牙利算法的步骤对矩阵进行操作，得到最大匹配数，并按照该匹配结果对这些计算结点进行计算资源的匹配。该操作在以下函数中实现：
+```c++
+	//生成最大匹配
+	int maxcompair(std::vector<std::vector<cost_matrix_node>>&matrix2);
+```
+4.当某一时刻的所有计算结点均完成计算资源的匹配后，将这些计算结点标记为VISITED，并对计算资源绑定输入寄存器，同时将其后序计算结点的入度减一。再次重复步骤一，压入当前入度为0的所有计算结点，并按照以上流程操作，直至当前块内所有计算结点均完成计算资源的绑定。以上所有操作在以下函数中实现：
+```c++
+std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&list,std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::vector<int>>matrix, int flag, Hardware& hardware,int&k);
+```
+5.匈牙利算法实现计算资源的绑定后，通过对绑定结果遍历，完成对各个计算资源的输出寄存器绑定。该操作在以下函数中实现：
+```c++
+void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi) 
+```
 
-4.	完成每个块内的计算资源绑定后，将最终的计算资源实例化结果和计算资源绑定结果依次push_back，并最终赋值给最终结果COR和CSP中。
+
 
 ### Part 5完成控制逻辑综合
 
