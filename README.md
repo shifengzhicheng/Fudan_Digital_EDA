@@ -38,10 +38,24 @@
 #### 环境要求
 
 - `visual studio 2019`及以上版本能正常打开项目中的所有文件
-- 编码`Unicode(UTF-8)`
+- 注意`src`编码格式为`Unicode(UTF-8)`
 - 生成一个`hls`的可执行文件能在`linux`下运行，`hls.exe` 能够在`windows` 下运行。
 
-#### 
+#### 使用方式
+
+根据自己的环境编写替换`Makefile`，目前项目中的`Makefile`仅仅适用于`window`。
+
+`Windows`：在`testfile` 文件夹中写好测试文件`file.ll` 后，在项目文件夹下运行以下命令：
+
+```cmd
+.\hls.exe testfile\dotprod.ll
+```
+
+`Linux`：在`testfile` 文件夹中写好测试文件`file.ll` 后，在项目文件夹下运行以下命令：
+
+```powershell
+./hls testfile\dotprod.ll
+```
 
 ### `IR`文件格式声明
 
