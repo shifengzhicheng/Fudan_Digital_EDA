@@ -26,13 +26,13 @@ module tb_dotprod;
 
   reg [31:0] ad;
   reg [31:0] bd;
-  
+
   wire [31:0] a_ad1;
   wire [31:0] b_ad1;
 
   reg [31:0] aadr;
   reg [31:0] badr;
-  
+
   wire [31:0] a_address1;
   wire [31:0] b_address1;
   // Instantiate the DUT
@@ -83,56 +83,46 @@ module tb_dotprod;
     ap_start = 0;
     wa = 1;
     wb = 1;
-    #2
-    aadr = 0;
+    #2 aadr = 0;
     badr = 0;
-    ad = 1; 
-    bd = 10; 
-    #2
-    aadr = 1;
+    ad   = 1;
+    bd   = 10;
+    #2 aadr = 1;
     badr = 1;
-    ad = 2; 
-    bd = 9; 
-        #2
-    aadr = 2;
+    ad   = 2;
+    bd   = 9;
+    #2 aadr = 2;
     badr = 2;
-    ad = 3; 
-    bd = 8;
-        #2
-    aadr = 3;
+    ad   = 3;
+    bd   = 8;
+    #2 aadr = 3;
     badr = 3;
-    ad = 4; 
-    bd = 7;
-        #2
-    aadr = 4;
+    ad   = 4;
+    bd   = 7;
+    #2 aadr = 4;
     badr = 4;
-    ad = 5; 
-    bd = 6;
-        #2
-    aadr = 5;
+    ad   = 5;
+    bd   = 6;
+    #2 aadr = 5;
     badr = 5;
-    ad = 6; 
-    bd = 5;
-        #2
-    aadr = 6;
+    ad   = 6;
+    bd   = 5;
+    #2 aadr = 6;
     badr = 6;
-    ad = 7; 
-    bd = 4;
-        #2
-    aadr = 7;
+    ad   = 7;
+    bd   = 4;
+    #2 aadr = 7;
     badr = 7;
-    ad = 8; 
-    bd = 3;
-        #2
-    aadr = 8;
+    ad   = 8;
+    bd   = 3;
+    #2 aadr = 8;
     badr = 8;
-    ad = 9; 
-    bd = 2;
-        #2
-    aadr = 9;
+    ad   = 9;
+    bd   = 2;
+    #2 aadr = 9;
     badr = 9;
-    ad = 10; 
-    bd = 1;       
+    ad   = 10;
+    bd   = 1;
     #20;
     wa = 0;
     wb = 0;
