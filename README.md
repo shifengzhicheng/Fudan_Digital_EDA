@@ -70,30 +70,73 @@ define int foo(int a, int b);
 
 返回值可以是`int`和`void`。
 
+**要注意`IR` 文件不应当出现一个变量既是表达式的输入变量，又同时作为表达式的输出变量的形式，我们认为这是不符合`IR` 文件的格式规范的行为。**
+
 #### 操作定义：
 
-```pascal
-load：从数组中加载一个数据，如b=load(a, 10)就是加载a[10]到b
-store: 将数据存储到数组：如store(a, 10, c)，将c存储到a[10]
-=：赋值
-+: c = a+b
--: c = a-b;
-\*: c = a*b;
-/: c = a/b;
-\==: cond = a==b;
-<: cond = a < b;
->: cond = a> b;
->=: cond = a>=b;
-<=: cond = a<=b;
-br:
-	br label：无条件跳转
-	br cond label1 label2：有条件跳转‘
-phi:
-	从不同模块中选择不同的变量值：phi(value1, block_label1, value2, block_label2, ...);
-	函数入口的label默认为0。
-return：
-	返回或返回值。
-```
+`load`：
+
+> 从数组中加载一个数据，如`b=load(a, 10)` 就是加载`a[10]` 到`b`
+
+`store`: 
+
+> 将数据存储到数组：如`store(a, 10, c)`，将`c` 存储到`a[10]`
+
+`=`：
+
+> 赋值
+
+`+`: 
+
+> `c = a+b`
+
+`-`: 
+
+> `c = a-b;`
+
+`*`: 
+
+> `c = a*b;`
+
+`/`: 
+
+> `c = a/b;`
+
+`==`: 
+
+> `cond = a==b;`
+
+`<`:
+
+> `cond = a < b;`
+
+`>`: 
+
+> `cond = a> b;`
+
+`=`: 
+
+> `cond = a>=b;`
+
+`<=`: 
+
+> `cond = a<=b;`
+
+`br`:
+
+> `br label`：无条件跳转
+>
+> `br cond label1 label2`：有条件跳转
+
+`phi`:
+
+> 从不同模块中选择不同的变量值：`phi(value1, block_label1, value2, block_label2, ...);`
+>
+> 函数入口的`label`默认为`0`。
+
+`return`：
+
+> 返回或返回值。
 
 #### 语言实例
 
@@ -123,38 +166,41 @@ ret:
 ```bash
 ├── picture # README文档的说明图片
 ├── projectfile # 项目要求文档与参考资料
-│   ├── HSPICE简明教程(复旦大学).pdf
-│   ├── proj1_v03_tj.pdf	
-│   ├── hspice_sa.pdf	
-│   ├── HspiceManual完全手册.pdf
+│   ├── read.md # 项目要求文件
 ##### 测试文件目录	
 ├── testfile 
 │   ├── SRAM.v
 │   ├── dotprod.v
-│   ├── tb_dotprod.v
 │   ├── gcd.v
 │   ├── tb_gcd.v
-##### 工作文件夹
-├── main.cpp
-├── parser.h
-├── parser.cpp
-├── HLS.h
-├── HLS.cpp
-├── dataflowgraph.h
-├── dataflowgraph.cpp
-├── controlflowgraph.h
-├── controlflowgraph.cpp
-├── schedule.h
-├── schedule.cpp
-├── leftAlgorithm.h
-├── computeresource.h
-├── Hungarian_algorithm.h
-├── control_logic.h
-├── cycleTable.h
-├── FSMachine.h
-├── FSMachine.cpp
+│   ├── tb_dotprod.v
+│   ├── dotprod.ll
+│   ├── gcd.ll
+##### 源文件
+├── src
+│   ├── main.cpp
+│   ├── parser.h
+│   ├── parser.cpp
+│   ├── HLS.h
+│   ├── HLS.cpp
+│   ├── dataflowgraph.h
+│   ├── dataflowgraph.cpp
+│   ├── controlflowgraph.h
+│   ├── controlflowgraph.cpp
+│   ├── schedule.h
+│   ├── schedule.cpp
+│   ├── leftAlgorithm.h
+│   ├── computeresource.h
+│   ├── Hungarian_algorithm.h
+│   ├── control_logic.h
+│   ├── cycleTable.h
+│   ├── FSMachine.h
+│   ├── FSMachine.cpp
 ##### 
-├── README.md # 项目说明文件
+├── README.md # 项目文档
+├── Makefile # windows平台下的makefile
+├── hls.exe # windows平台下编译的结果，使用mingw32_make
+├── hls # Linux下编译结果，使用cmake
 ```
 
 ## 项目技术细节
