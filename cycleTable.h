@@ -1,7 +1,8 @@
-#pragma once
 #ifndef CYCLETABLE_H
 #define CYCLETABLE_H
-
+#include <iostream>
+#include <vector>
+#include <string>
 struct cycletable {
 	std::string var;	//变量
 	int com;			//变量var活跃期间使用的计算资源

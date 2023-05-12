@@ -1,9 +1,7 @@
 ﻿#ifndef FSM_H 
 #define FSM_H
-#include "ControlFlowGraph.h"
+#include "controlflowgraph.h"
 #include "cycleTable.h"
-#include <iostream>
-#include <fstream>
 class FSMachine {
 private:
 	//std::vector<std::vector<Cycle>> m_Cycles;

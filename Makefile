@@ -1,28 +1,29 @@
-LINK    = @echo linking $@ && g++ 
-GCC     = @echo compiling $@ && g++ 
-GC      = @echo compiling $@ && gcc 
-AR      = @echo generating static library $@ && ar crv
-FLAGS   = -g -DDEBUG -W -Wall -fPIC
-GCCFLAGS = 
-DEFINES = 
-HEADER  = -I./
-LIBS    = 
-LINKFLAGS =
+# 编译器
+CC=g++
+# 链接器
+LD=g++
+# 编译选项
+CFLAGS=-c -g -DDEBUG -W -Wall -fPIC
+# 链接选项
+LDFLAGS=
+# 可执行文件名称
+EXECUTABLE=hls
 
-#LIBS    += -lrt
-#LIBS    += -pthread
+# 所有的源文件
+SOURCES=main.cpp parser.cpp HLS.cpp dataflowgraph.cpp controlflowgraph.cpp schedule.cpp Hungarian_algorithm.h control_logic.h cycleTable.h FSMachine.cpp
 
+# 所有的对象文件
+OBJECTS=$(SOURCES:.cpp=.o)
 
+all: $(SOURCES) $(EXECUTABLE)
 
-hls: parser.o main.o HLS.o
-	$(LINK) $(FLAGS) $(LINKFLAGS) -o $@ $^ $(LIBS)
+$(EXECUTABLE): $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $^
 
 .cpp.o:
-	$(GCC) -c $(HEADER) $(FLAGS) $(GCCFLAGS) -fpermissive -o $@ $<
-
-.c.o:
-	$(GC) -c $(HEADER) $(FLAGS) -fpermissive -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf $(TARGET) *.o *.so *.a
-	rm -rf hls
+	rm -rf $(EXECUTABLE) $(OBJECTS)
+
+.PHONY: clean

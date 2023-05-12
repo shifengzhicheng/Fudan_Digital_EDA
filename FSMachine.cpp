@@ -1,5 +1,5 @@
 ﻿#include "FSMachine.h"
-
+#include <algorithm>
 FSMachine::FSMachine() {}
 FSMachine::FSMachine(ControlFlowGraph& CFG, std::vector<std::vector<Cycle>>& Cycles, std::vector<std::vector<std::pair<std::string, int>>>& REG)
 {
@@ -195,7 +195,7 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
     {
         std::string str_var = m_statement.vars[0];
         std::string severalLine;
-        if (find(storeFlag.begin(), storeFlag.end(), str_var) == storeFlag.end())
+        if (std::find(storeFlag.begin(), storeFlag.end(), str_var) == storeFlag.end())
         {
             storeFlag.push_back(str_var);
             severalLine += ("\t\t" + str_var + "_we0 <= 1;\n");
@@ -319,9 +319,9 @@ std::string FSMachine::opTrans(Statement m_statement, int& outregIndex, std::vec
         break;
     }
     default:
-        return std::string();
         break;
     }
+    return std::string();
 }
 void FSMachine::FSMgener(ControlFlowGraph& CFG)
 {
