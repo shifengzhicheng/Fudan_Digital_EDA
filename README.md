@@ -683,7 +683,7 @@ ret:
 
 ##### 部分内部结构示意：
 
-<img src="C:\Users\18064\projects\Fudan_Digital_EDA\picture\dorprod_innerRTL.png" style="zoom:60%;" />
+<img src="picture\dorprod_innerRTL.png" style="zoom:60%;" />
 
 ##### 测试的结果波形：
 
