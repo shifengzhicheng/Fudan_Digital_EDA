@@ -1,29 +1,23 @@
-# 编译器
-CC=g++
-# 链接器
-LD=g++
-# 编译选项
-CFLAGS=-c -g -DDEBUG -W -Wall -fPIC
-# 链接选项
-LDFLAGS=
-# 可执行文件名称
-EXECUTABLE=hls
+# Compiler and linker settings
+CC = g++
+CFLAGS = -Wall -g
+LDFLAGS =
 
-# 所有的源文件
-SOURCES=main.cpp parser.cpp HLS.cpp dataflowgraph.cpp controlflowgraph.cpp schedule.cpp Hungarian_algorithm.h control_logic.h cycleTable.h FSMachine.cpp
+# Source files and object files
+SRCDIR = src
+SRCS = $(wildcard $(SRCDIR)/*.cpp)
+HDRS = $(wildcard $(SRCDIR)/*.h)
+OBJS = $(SRCS:.cpp=.o)
+TARGET = hls
 
-# 所有的对象文件
-OBJECTS=$(SOURCES:.cpp=.o)
+# Rules
+all: $(TARGET)
 
-all: $(SOURCES) $(EXECUTABLE)
+$(TARGET): $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^
 
-$(EXECUTABLE): $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $^
-
-.cpp.o:
-	$(CC) $(CFLAGS) -o $@ $<
+%.o: %.cpp $(HDRS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(EXECUTABLE) $(OBJECTS)
-
-.PHONY: clean
+	rm -f $(OBJS) $(TARGET)
