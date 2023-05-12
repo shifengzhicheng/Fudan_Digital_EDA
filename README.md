@@ -554,27 +554,11 @@ void HLS::genFSM() {
 ##### 接口说明
 
 ```c++
-	FSMachine(ControlFlowGraph &CFG);
-	std::vector<std::string>& getModule();
-	std::vector<std::string>& getFSM();
-	std::string getFilename();
 	std::unordered_map<std::string, std::string>& getStateMap() {
 		return stateMapping;
 	}
 	// 生成module
 	void IOdefinationAppend(int ret_type,std::vector<var>& vars);
-	// 生成always逻辑块
-	std::string alwayslogic(bool Istiming);
-	// 生成if逻辑块
-	std::string iflogic(std::string cond);
-	// elseif逻辑块
-	std::string elseiflogic(std::string cond);
-	// else逻辑
-	std::string elselogic();
-	// 生成begin
-	void begin(int i);
-	// 生成end
-	void end(int i);
 	// 生成FSM
 	void FSMgener(ControlFlowGraph &CFG);
 ```
@@ -617,7 +601,7 @@ void HLS::genFSM() {
 
 ```verilog
 (
-    output ap_return
+    output [31:0] ap_return
 );
 ```
 
@@ -627,9 +611,7 @@ void HLS::genFSM() {
 (
     input	ap_clk, // 时钟信号
 	input	ap_rst_n, // rst_n信号
-	input	ap_start, // 程序的一些信号
-	output	reg ap_idle,
-	output	reg ap_ready,
+	input	ap_start, // 程序的开始信号
 	output	reg ap_done // 程序结束信号
 );
 ```
@@ -640,7 +622,11 @@ void HLS::genFSM() {
 
 ##### 状态机跳转的实现
 
-对于每个块都生成一个`always`逻辑语句块，然后用`if`语句进行跳转，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
+状态机跳转示意图：
+
+![](C:\Users\18064\projects\Fudan_Digital_EDA\picture\FSM.png)
+
+生成一个`always`块的语句，对于每个块都生成一个`if`逻辑语句块，进行跳转条件的设置，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
 
 ## 项目测试
 
@@ -681,8 +667,26 @@ ret:
 
 ##### 实例化SRAM
 
-为了从数组中读数据，我们初始化了两个`SRAM`，`SRAM_a`，`SRAM_b`，这两个`SRAM` 的`module` 为生成的`module` 的访问数组的功能提供了便利。在这里为了方便起见，我们取`n=10`，然后在`SRAM_a`，`SRAM_b` 中存入`a={1,2,3,4,5,6,7,8,9,10}`，`b={10,9,8,7,6,5,4,3,2,1}`。测试的结果如下所示：
+为了从数组中读数据，我们初始化了两个`SRAM`，`SRAM_a`，`SRAM_b`，这两个`SRAM` 的`module` 为生成的`module` 的访问数组的功能提供了便利。在这里为了方便起见，我们取`n=10`，然后在`SRAM_a`，`SRAM_b` 中存入了数据：
 
-![tb](picture\dotprod_tb.png)
+`a={1,2,3,4,5,6,7,8,9,10};`
 
-测试的结果如上所示，我们在`testbench`中模拟了一个`module`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。
+`b={10,9,8,7,6,5,4,3,2,1};`
+
+`n=10;`
+
+我们对程序的预期结果是`220`；
+
+##### RTL电路图
+
+<img src="picture\dotprod_tbRTL.png" style="zoom:60%;" />
+
+##### 部分内部结构示意：
+
+<img src="C:\Users\18064\projects\Fudan_Digital_EDA\picture\dorprod_innerRTL.png" style="zoom:60%;" />
+
+##### 测试的结果波形：
+
+<img src="picture\dotprod_tb.png" alt="tb" style="zoom:70%;" />
+
+测试的结果如上所示，我们在`testbench`中模拟了一个`SRAM`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现。这与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出。
