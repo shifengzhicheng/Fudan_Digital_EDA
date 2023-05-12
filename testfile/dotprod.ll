@@ -1,6 +1,5 @@
 define int dotprod(int a[], int b[], int n)
     c = 0;
-    br start;
 
 start:
     i = phi(0, 0, i_inc, calc);

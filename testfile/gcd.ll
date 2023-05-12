@@ -9,15 +9,13 @@ start:
     br a_LE_b cal exchange;
 	
 cal:
-    divisor = b1;
-    remainder = a1 - b1;
+    divisor = phi(b1, start, a1, exchange);
+    larger = phi(a1, start, b1, exchange);
+    remainder = larger - divisor;
     cond = remainder == 0;
     br cond ret start;
 	
 exchange:
-    temp = a1;
-    a1 = b1;
-    b1 = temp;
     br cal;
 		
 ret:
