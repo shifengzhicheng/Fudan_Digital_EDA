@@ -640,7 +640,7 @@ void HLS::genFSM() {
 
 状态机跳转示意图：
 
-![](C:\Users\18064\projects\Fudan_Digital_EDA\picture\FSM.png)
+<img src="picture\FSM.png" width="800px;" />
 
 生成一个`always`块的语句，对于每个块都生成一个`if`逻辑语句块，进行跳转条件的设置，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
 
@@ -695,14 +695,14 @@ ret:
 
 ##### RTL电路图
 
-<img src="picture\dotprod_tbRTL.png" style="zoom:60%;" />
+<img src="picture\dotprod_tbRTL.png" width="800px;" />
 
 ##### 部分内部结构示意：
 
-<img src="picture\dorprod_innerRTL.png" style="zoom:60%;" />
+<img src="picture\dorprod_innerRTL.png" width="800px;" />
 
 ##### 测试的结果波形：
 
-<img src="picture\dotprod_tb.png" alt="tb" style="zoom:70%;" />
+<img src="picture\dotprod_tb.png" alt="tb" width="800px;" />
 
 测试的结果如上所示，我们在`testbench`中模拟了一个`SRAM`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现。这与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出。
