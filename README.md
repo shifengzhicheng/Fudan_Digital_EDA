@@ -424,7 +424,7 @@ void HLS::generate_CFG() {
 ```c++
 	std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
 ```
-#####左边算法分配寄存器
+##### 左边算法分配寄存器
 ```c++
 	std::vector<std::pair<std::string, int>> leftAlgorithm(std::vector<varPeriod> V);
 ```
