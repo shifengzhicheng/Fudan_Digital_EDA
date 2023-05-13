@@ -29,6 +29,7 @@ int getresourcetype(DataFlowGraph& DFG, int num) {
 	else {
 		return 0;
 	}
+	return -1;
 }
 //生成某一时刻的矩阵
 std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,std::vector<int>list, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE,int flag,Hardware&hardware) {//flag表征生成的矩阵计算资源类别
@@ -213,6 +214,8 @@ std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&
 	if (matrix[0].size() == 1) {
 		return ans;
 	}
+	matrix.clear();
+	
 	std::vector<int>min;
 	std::vector<std::vector<cost_matrix_node>>matrix2;
 	for (int i = 0; i < matrix1[0].size(); i++) {
@@ -238,6 +241,8 @@ std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&
 		}
 		matrix2.push_back(matrix1col);
 	}
+	matrix1.clear();
+	
 	//生成了matrix2
 	int pairsum;
 	if (matrix2.size() >= matrix2[0].size()) {//node结点大于计算资源数
@@ -643,12 +648,25 @@ std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::ve
 			tq1.push(CurrentNode);
 		}
 	}
-	
+	for (int k = 0; k < ans.size(); k++) {
+		std::string name;
+		if (CORE[ans[k].second].flag == 1) {
+			name = "adder     ";
+		}
+		else if (CORE[ans[k].second].flag == 2) {
+			name = "multiplier";
+		}
+		else if (CORE[ans[k].second].flag == 3) {
+			name = "divider   ";
+		}
+		std::cout << "Node Number: " << ans[k].first << "\tComputation Resource Type:" << name<< "\tComputation Resource Number:  " << ans[k].second << std::endl;
+	}
 	return ans;
 }
 
 void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi) {
 	for (int k = 0; k < CSPi.size(); k++) {
+		
 		int outreg = findregister(REGi, DFG.get_opList()[CSPi[k].first].element.getOutputvar());
 		if (CORE[CSPi[k].second].findoutreg(outreg)) {
 			continue;
@@ -656,7 +674,7 @@ void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, i
 		else {
 			CORE[CSPi[k].second].setoutputregister(outreg);
 		}
+		
 	}
 }
 #endif
-
