@@ -173,7 +173,9 @@ void HLS::travelback() {
 
 void HLS::perform_scheduling() {
 	improved_schedule_forCFG(CFG);
-
+	std::cout <<"Finsh Scheduling"<< std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void HLS::perform_register_allocation_and_binding() {
@@ -183,6 +185,9 @@ void HLS::perform_register_allocation_and_binding() {
 	{
 		REG.push_back(binding((*iter).DFG));
 	}
+	std::cout <<"Finsh Register Allocation and Binding"<< std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 void HLS::perform_calculate_allocation_and_binding() {
 	//std::vector<std::vector<std::pair<std::string, int>>> REG1 = getREG();
@@ -202,6 +207,9 @@ void HLS::perform_calculate_allocation_and_binding() {
 		bindoutputregister(DFGS[i].DFG, REG[i], CORE, CSP[i]);
 	}
 	COR = CORE;
+	std::cout <<"Finsh Calculate Allocation and Binding"<< std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void HLS::synthesize_control_logic() {
@@ -220,11 +228,17 @@ void HLS::synthesize_control_logic() {
 		std::cout << "\n\n\n\n";
 		iter2++;
 	}
+	std::cout <<"Finsh Synthesize Control Logic"<< std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void HLS::genFSM()
 {
 	outputFSM = FSMachine(CFG, Cycles, REG);
+	std::cout <<"Finsh Generate Finate Sate Machine."<< std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void HLS::outputfile() {
