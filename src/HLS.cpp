@@ -185,6 +185,17 @@ void HLS::perform_register_allocation_and_binding() {
 	{
 		REG.push_back(binding((*iter).DFG));
 	}
+	size_t len = REG.size();
+	for (int i = 0; i < len; i++)
+	{
+		std::string lableName = DFGS[i].DFG.get_label();
+		std::cout << lableName << ":" << std::endl;
+		for (std::vector<std::pair<std::string, int>>::iterator iter = REG[i].begin(); iter != REG[i].end(); iter++)
+		{
+			std::cout << iter->first;
+			std::cout << "\t" << iter->second << std :: endl;
+		}
+	}
 	std::cout <<"Finsh Register Allocation and Binding"<< std::endl;
 	std::cout << std::endl;
 	std::cout << std::endl;
