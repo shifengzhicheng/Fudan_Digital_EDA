@@ -815,9 +815,9 @@ ret:
 
 ##### 测试的结果波形：
 
-<img src="picture\tb_gcd_a24_b56.png" alt="tb" style="zoom:70%;" />
+<img src="picture\gcd_tb_a24_b56.png" alt="tb" style="zoom:70%;" />
 
-<img src="picture\tb_gcd_a361_b228.png" alt="tb" style="zoom:70%;" />
+<img src="picture\gcd_tb_a361_b228.png" alt="tb" style="zoom:70%;" />
 
 测试的结果如上所示。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现，与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出，因此我们关心的只是在`ap_done`信号跳变为`1`的时候`ap_return`的输出结果。
 
