@@ -32,7 +32,7 @@ void HLS::generate_CFG()
 		{
 			std::cout << "From Block: " + DFG.get_inputList()[i].From_Block + ": " + DFG.get_inputList()[i].InputBlockVarName << std::endl;
 		}
-		std::cout << "-------------" << std::endl;
+		std::cout << "----------------------------" << std::endl;
 		// 图初始化
 		DFG.Initialize();
 		// 压入所有入度为0的节点
@@ -54,7 +54,7 @@ void HLS::generate_CFG()
 			// 打印信息
 			std::cout << "--"
 					  << "CurrentNode index in DFG: " << CurrentNode << "--" << std::endl;
-			std::cout << "InputVar of CurrentNode: " << std::endl;
+			std::cout << "---InputVar of CurrentNode: ---" << std::endl;
 			for (int i = 0; i < DFG.get_opList()[CurrentNode].InputVar.size(); i++)
 				std::cout << DFG.get_opList()[CurrentNode].InputVar[i] << std::endl;
 			std::cout << "ToVertex Index of CurrentNode: " << std::endl;
