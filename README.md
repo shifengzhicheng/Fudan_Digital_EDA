@@ -579,7 +579,7 @@ struct Statement {
 ```
 
 `void generateCycles(std::vector<std::pair<std::string, int>> _REG)`：根据寄存器绑定、计算资源绑定结果，生成一个向量`std::vector<Cycle> C;`，`C[i]`对应周期`i`执行的所有`Statement`。首先要确定`C`的大小。经过与小组成员的协商，由于寄存器绑定的结果是针对每个块而言的，每当传入一个新的块时，所有的寄存器都会被覆盖掉，因此需要事先将本块中需要用到的从其他块中传入的变量导入到对应的寄存器中。
-因此，这里将`C`的大小设置为块内语句总周期数加`2`，其中第零周期执行将郑志宇同学生成的`CFG`中的`MemMap`中存储的相关变量数据导入到绑定的寄存器中，最后一个周期执行将本块会传出的数据导入到`MemMap`中。
+因此，这里将`C`的大小设置为块内语句总周期数加`1`，其中第零周期将郑志宇同学生成的`CFG`中的`MemMap`中存储的相关变量数据导入到绑定的寄存器中，最后一个周期均为`BR`指令或`RETURN`指令，在`BR`指令所处周期执行将本块会传出的数据导入到`MemMap`中的操作。
 另外，`node`节点包含沈笑涵同学的计算资源绑定结果，以及不使用计算资源的节点。后者需要特别处理，否则会报溢出错误。
 
 `std::vector<Cycle> getCycle()`：用于返回最终生成的周期表`std::vector<Cycle> C`。
@@ -763,3 +763,116 @@ ret:
 <img src="picture\dotprod_tb.png" alt="tb" width="800px;" />
 
 测试的结果如上所示，我们在`testbench`中模拟了一个`SRAM`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现。这与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出。
+
+### 测试文件 2 gcd.v
+
+#### IR文件由周翔同学提供
+
+`├── testfile` 
+
+`│   ├── gcd.ll` 
+
+
+```asm
+define int gcd(int a, int b)
+    c = a;
+    d = b;
+
+start:
+    a1 = phi(c, 0, divisor, cal);
+    b1 = phi(d, 0, remainder, cal);
+    a_LE_b = a1 >= b1;
+    br a_LE_b cal exchange;
+	
+cal:
+    divisor = phi(b1, start, a1, exchange);
+    larger = phi(a1, start, b1, exchange);
+    remainder = larger - divisor;
+    cond = remainder == 0;
+    br cond ret start;
+	
+exchange:
+    br cal;
+		
+ret:
+    return divisor;
+```
+
+#### 测试文件由周翔同学提供：
+`├── testfile` 
+
+`│   ├── gcd.v` 
+
+`│   ├── tb_gcd.v` 
+
+#### 文件说明：
+
+使用更相减损法计算两个数`a`、`b`的最大公因数。`exchange`块中只执行br操作，是为了在`cal`块中准确得到`a1`与`b1`中的较大值。
+
+#### 测试结果：
+
+这里设置输入`a = 24`，`b = 56`，预期输出为8；`a = 361`，`b = 228`，预期输出为19。
+
+##### 测试的结果波形：
+
+<img src="picture\tb_gcd_a24_b56.png" alt="tb" style="zoom:70%;" />
+
+<img src="picture\tb_gcd_a361_b228.png" alt="tb" style="zoom:70%;" />
+
+测试的结果如上所示。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现，与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出，因此我们关心的只是在`ap_done`信号跳变为`1`的时候`ap_return`的输出结果。
+
+### 测试文件 3 Sum.v
+
+#### IR文件由周翔同学提供
+
+`├── testfile` 
+
+`│   ├── Sum.ll` 
+
+
+```asm
+define int Sum(int a[], int b[], int n)
+    c = 0;
+start:
+    i = phi(0, 0, i_inc, calc);
+    sum = phi(c, 0, temp, calc);
+    cond = i >= n;
+    br cond ret calc;
+
+calc:
+    ai = load(a, i);
+    temp = sum + ai;
+    store(b, i, temp);
+    i_inc = i + 1;
+    br start;
+
+ret:
+    num = n - 1;
+    res = load(b, num);
+    return res;
+```
+
+#### 测试文件由周翔同学提供：
+`├── testfile` 
+
+`│   ├── Sum.v` 
+
+`│   ├── tb_Sum.v` 
+
+#### 文件说明：
+
+使用`store`指令将`a`数组前`i`个元素的和存到`b`数组的第`i`个位置，最终输出`a`数组元素之和，即`b[n]`存储的结果。
+
+#### 测试结果：
+
+这里设置输入：
+`n = 10；`
+`a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };`
+预期输出为：
+`b = { 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 }.`
+
+##### 测试的结果波形：
+
+<img src="picture\Sum_tb.png" alt="tb" style="zoom:70%;" />
+
+测试的结果如上所示。可以看到，`b_ad1`的结果符合预期。在`ap_done`信号跳变为`1`时，`ap_return`的结果为`55`，即数组`a`元素之和，符合预期。
