@@ -24,11 +24,11 @@ module Sum
 	reg [31:0] reg_4;
 
 
-	reg [31:0] Mem_i_inc;
-	reg [31:0] Mem_c;
-	reg [31:0] Mem_temp;
-	reg [31:0] Mem_i;
 	reg [31:0] Mem_sum;
+	reg [31:0] Mem_temp;
+	reg [31:0] Mem_i_inc;
+	reg [31:0] Mem_i;
+	reg [31:0] Mem_c;
 
 
 	reg [4:0] CurrentState;
@@ -147,26 +147,26 @@ module Sum
 		end
 		32'd1: begin
 		if(LastState == state_0)
-			reg_1 <= 0;
+			reg_2 <= 0;
 		else if(LastState == state_calc)
-			reg_1 <= reg_1;
+			reg_2 <= reg_1;
 		if(LastState == state_0)
-			reg_2 <= reg_2;
+			reg_1 <= reg_2;
 		else if(LastState == state_calc)
-			reg_2 <= reg_3;
+			reg_1 <= reg_3;
 		end
 		32'd2: begin
 		end
 		32'd3: begin
-		reg_3 <= (reg_1 >= n);
+		reg_3 <= (reg_2 >= n);
 		end
 		32'd4: begin
 		end
 		32'd5: begin
 		end
 		32'd6: begin
-		Mem_i <= reg_1;
-		Mem_sum <= reg_2;
+		Mem_i <= reg_2;
+		Mem_sum <= reg_1;
 		branch_ready <= 1;
 		end
 		endcase

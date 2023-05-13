@@ -124,7 +124,7 @@ void HLS::travelaround() {
 				// 根据第i个节点的输入变量情况，减少入度
 				DFG.InVertex[nextNodeIndex]--;
 				// 入度小于等于0则进入队列
-				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] == 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
+				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] <= 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
 					tq.push(DFG.ToVertex(CurrentNode)[i]);
 				}
 			}
@@ -163,7 +163,7 @@ void HLS::travelback() {
 				// 根据第i个节点的输入变量情况，减少前面节点的出度
 				DFG.OutVertex[ForeNodeIndex]--;
 				// 入度小于等于0则进入队列
-				if (DFG.OutVertex[ForeNodeIndex] == 0 && DFG.Mark[ForeNodeIndex] == UNVISITED) {
+				if (DFG.OutVertex[ForeNodeIndex] <= 0 && DFG.Mark[ForeNodeIndex] == UNVISITED) {
 					tq.push(ForeNodeIndex);
 				}
 			}
