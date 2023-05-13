@@ -767,9 +767,7 @@ void HLS::genFSM() {
 	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
 ```
 ##### 块内运行周期计数器
-根据每个块的执行总周期不同，对`counter`在不同的时候指令，同时在每个块的最后一定需要跳转，所以还需要在最后将`branch_ready`置1。
-
-在一个块内运行的周期数是固定的，这个逻辑被综合成了一个`always`逻辑块
+根据我们构建项目的思想，程序在一个块内运行的周期数必然是固定的，这个逻辑被综合成了一个`always`逻辑块。它对`ap_clk`的上升沿敏感，每次上升沿到来时，判断当前的周期数是否到达了调度的周期，如果是，那么`counter`被置零，且产生一个状态机可以跳转的`branch_ready`信号。否则`counter <= counter + 1`，继续计量周期。
 
 ##### 寄存器综合
 ###### 可以将op分为以下几类
@@ -791,36 +789,36 @@ void HLS::genFSM() {
 	end
 ```
 2. 访存类：
-  在起始周期将`load`或`store`的使能信号置1，地址寄存器存入相应的地址（对于`store`，在这个周期还需要将数据存入写寄存器中），在结束周期将`load`或`store`信号置0，对于`load`，在这个周期将要写如的数据存入对应寄存器。示例如下：
+    在起始周期将`load`或`store`的使能信号置1，地址寄存器存入相应的地址（对于`store`，在这个周期还需要将数据存入写寄存器中），在结束周期将`load`或`store`信号置0，对于`load`，在这个周期将要写如的数据存入对应寄存器。示例如下：
 
   - `store`
 
   - ```verilog
     	32'd6: begin
-    		b_we0 <= 1;
-    		b_address0 <= reg_1;
-    		b_ad0 <= reg_2;
-    	end
-    	32'd7: begin
-    	end
-    	32'd8: begin
-    		b_we0 <= 0;
-    	end
+        		b_we0 <= 1;
+        		b_address0 <= reg_1;
+        		b_ad0 <= reg_2;
+        	end
+        	32'd7: begin
+        	end
+        	32'd8: begin
+        		b_we0 <= 0;
+        	end
     ```
 
   - `load`
 
   - ```verilog
     	32'd4: begin
-    		b_ce0 <= 1;
-    		b_address0 <= reg_1
-    	end
-    		32'd5: begin
-    	end
-    		32'd6: begin
-    		b_ce0 <= 0;
-    		reg_1 <= b_q0
-    	end
+        		b_ce0 <= 1;
+        		b_address0 <= reg_1
+        	end
+        		32'd5: begin
+        	end
+        		32'd6: begin
+        		b_ce0 <= 0;
+        		reg_1 <= b_q0
+        	end
     ```
 
 3. 跳转类：
