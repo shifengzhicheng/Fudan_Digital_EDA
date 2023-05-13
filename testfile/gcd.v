@@ -15,12 +15,12 @@ module gcd
 	reg [31:0] reg_4;
 
 
-	reg [31:0] Mem_a1;
-	reg [31:0] Mem_b1;
-	reg [31:0] Mem_remainder;
-	reg [31:0] Mem_d;
 	reg [31:0] Mem_c;
 	reg [31:0] Mem_divisor;
+	reg [31:0] Mem_d;
+	reg [31:0] Mem_remainder;
+	reg [31:0] Mem_b1;
+	reg [31:0] Mem_a1;
 
 
 	reg [5:0] CurrentState;
@@ -139,12 +139,12 @@ module gcd
 		32'd0: begin
 		end
 		32'd1: begin
-		reg_2 <= a;
-		reg_1 <= b;
+		reg_1 <= a;
+		reg_2 <= b;
 		end
 		32'd2: begin
-		Mem_c <= reg_2;
-		Mem_d <= reg_1;
+		Mem_c <= reg_1;
+		Mem_d <= reg_2;
 		branch_ready <= 1;
 		end
 		endcase
@@ -152,18 +152,18 @@ module gcd
 	state_start: begin
 		case(counter)
 		32'd0: begin
-		reg_3 <= Mem_c;
-		reg_1 <= Mem_divisor;
-		reg_2 <= Mem_d;
+		reg_1 <= Mem_c;
+		reg_2 <= Mem_divisor;
+		reg_3 <= Mem_d;
 		reg_4 <= Mem_remainder;
 		end
 		32'd1: begin
 		if(LastState == state_0)
-			reg_1 <= reg_3;
-		else if(LastState == state_cal)
 			reg_1 <= reg_1;
+		else if(LastState == state_cal)
+			reg_1 <= reg_2;
 		if(LastState == state_0)
-			reg_2 <= reg_2;
+			reg_2 <= reg_3;
 		else if(LastState == state_cal)
 			reg_2 <= reg_4;
 		end
@@ -186,18 +186,18 @@ module gcd
 	state_cal: begin
 		case(counter)
 		32'd0: begin
-		reg_2 <= Mem_b1;
-		reg_1 <= Mem_a1;
+		reg_1 <= Mem_b1;
+		reg_2 <= Mem_a1;
 		end
 		32'd1: begin
 		if(LastState == state_start)
-			reg_1 <= reg_2;
-		else if(LastState == state_exchange)
 			reg_1 <= reg_1;
-		if(LastState == state_start)
-			reg_2 <= reg_1;
 		else if(LastState == state_exchange)
+			reg_1 <= reg_2;
+		if(LastState == state_start)
 			reg_2 <= reg_2;
+		else if(LastState == state_exchange)
+			reg_2 <= reg_1;
 		end
 		32'd2: begin
 		end
