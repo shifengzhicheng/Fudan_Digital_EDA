@@ -237,7 +237,13 @@ ret:
 	void outputfile();
 ```
 
-其中，函数`travelaround`和`travelback`是郑志宇同学给出的按照拓扑排序数据流图的方法，用作参考，并不参与项目功能的实现。
+其中，函数`travelaround()`和`travelback()`是郑志宇同学给出的按照拓扑排序数据流图的方法，用作参考，并不参与项目功能的实现。其中，只介绍顺序遍历`travelaround()`，`travelback()`完全类似。`travelaround()`的具体的实现使用队列的数据结构，首先初始化节点的入度，取出所有入度为`0`的节点放入队列，入度为`0`代表节点并不依赖于同一个数据流图的其他节点，所以可以直接进入队列进行调度。
+
+而在主循环的过程是节点出队列，对节点进行操作，然后将后续节点的入度减小，并检查后续节点此时的入度。为`0`时进入队列。
+
+- 因为`phi`操作的特殊性，`phi`操作的入度理论上应该是`1`，但是实际上`phi`操作在数据流图中可能依赖多个变量，这样的可能导致实际上会有`phi`操作的节点的入度在小于`0`的时候才入栈。不能保证其入度恰好为`0`。虽然可以通过令`phi`操作的入度等于其依赖变量数目来完善这一部分程序，但逻辑上还是并没有进行调整。
+
+这一步的遍历是遍历项目的数据流图的基本操作。
 
 ### Part 1生成数据流图以及控制流图
 
@@ -386,7 +392,7 @@ void HLS::generate_CFG() {
 1. 哈希表索引节点
 2. 数组实现有向图
 
-本部分在创建数据流图的时候，在首尾个创建了一个虚拟的节点，首节点意义是作为外部变量输入的索引位置，而末节点的意义是作为需要输出到外部的变量的索引位置。利用哈希表在所有的数据流图中匹配需要的信息并进行更新和存储最终生成了这样的一个完整的数据流图。然后是在创建控制流图的时候为了输出三个输入变量生成了一个名为`fiction_head`的虚拟节点。这个节点的主要意义也在与索引到头部的节点，在生成的verilog的状态机中，这个节点是标志着函数未开始运行的节点。在接收到ap_start的信号之后就会进入到运行状态。
+本部分在创建数据流图的时候，在首尾个创建了一个虚拟的节点，首节点意义是作为外部变量输入的索引位置，而末节点的意义是作为需要输出到外部的变量的索引位置。利用哈希表在所有的数据流图中匹配需要的信息并进行更新和存储最终生成了这样的一个完整的数据流图。然后是在创建控制流图的时候为了输出三个输入变量生成了一个名为`fiction_head`的虚拟节点。这个节点的主要意义也在与索引到头部的节点，在生成的`verilog`的状态机中，这个节点是标志着函数未开始运行的节点。在接收到`ap_start`的信号之后就会进入到运行状态。
 
 ### Part 2完成周期的调度
 
@@ -394,7 +400,7 @@ void HLS::generate_CFG() {
 此部分由任钰浩同学完成。
 本部分根据周期调度的结果计算变量的生存周期，从而将变量与寄存器绑定。需要注意的是块与块之间是独立考虑的。
 
-其基本思想是根据调度结果，从输出开始往前遍历，生成每个操作数的生存周期。然后根据生存周期重叠的变量无法共享寄存器，不重叠的变量可以共享寄存器的原则进行寄存器分配。这实际上是一个区间染色问题，可以通过左边算法来实现快速求解最优解
+其基本思想是根据调度结果，从输出开始往前遍历，生成每个操作数的生存周期。然后根据生存周期重叠的变量无法共享寄存器，不重叠的变量可以共享寄存器的原则进行寄存器分配。这实际上是一个区间染色问题，可以通过左边算法来实现快速求解最优解。
 
 #### 函数及文件说明
 `├── HLS.h `
@@ -419,7 +425,7 @@ void HLS::generate_CFG() {
     		int stopp;//结束周期
 	};
 ```
-这个结构体是为了提炼出CFG中对寄存器分配有用的信息，使之后的左边算法编写只用聚焦与这个结构体，可以在CFG完成前就开始编写，提高项目的并行度。
+这个结构体是为了提炼出`CFG`中对寄存器分配有用的信息，使之后的左边算法编写只用聚焦与这个结构体，可以在`CFG`完成前就开始编写，提高项目的并行度。
 ##### 根据调度结果得到生存周期
 ```c++
 	std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
@@ -430,49 +436,16 @@ void HLS::generate_CFG() {
 ```
 左边算法将区间图中的区间按其左边（区间起点）排序，然后从排序的队列中，取出一个区间，逐个从剩下的区间里根据左边顺序，逐个找到与前面区间不重叠的区间，给相同“着色”（分配寄存器），重复上述操作，知道所有区间（变量）都被正确“着色”（分配寄存器）
 实际操作中是定义一个`endpos`，将`startp`大于`endpos`的变量分配给该寄存器，然后刷新`endpos`为该变量的`stopp`，知道没有变量可以分配，给出新的寄存器然后将`endpos`重置为0。
-```c++
-	while (!V.empty())
-    	{
-        	varPeriod v = V[0];
-        	ans.push_back(make_pair(v.var, reg));
-        	int endpos = v.stopp;
-        	V.erase(V.begin());
-        	for (std::vector<varPeriod>::iterator iter = V.begin(); iter != V.end();)
-        	{
-            	if ((*iter).startp > endpos)
-            	{
-                	ans.push_back(make_pair((*iter).var, reg));
-                	endpos = (*iter).stopp;
-                	iter = V.erase(iter);
-            	}
-            	else
-                	iter++;
-        	}
-        	reg++;
-    	}
-```
+
 #### 技术细节
 1. 有的数据不用分配寄存器，所以并不需要在`graph2VarPeriods`中转化为`varPeriod`，这类数据分两类，一是常数，而是该函数的输入，需要在`graph2VarPeriods`函数中识别并将其排除
 ###### 常数：
-```c++
-	else if (!isPureNumber(*varIter))
-        	varMap[*varIter] = (*iter).getTend();
-```
+对于常数，默认将不会进行寄存器的分配。
+
 ###### 函数输入：
-这些数据的特点是它们都来自与`fiction_head`
-```c++
-	if (iter->From_Block == std::string("fiction_head"))
-            	mouduleInput.push_back(iter->InputBlockVarName);
-```
-```c++
-	if (find(mouduleInput.begin(), mouduleInput.end(), *varIter) == mouduleInput.end())//判断不是输入数据
-                if (varMap.find(*varIter) != varMap.end())
-                {
-                    if (varMap[*varIter] < (*iter).getTend())
-                        varMap[*varIter] = (*iter).getTend();
-                }
-```
-2. 上述提到寄存器分配时块与块之间是独立考虑的，但为了使得块中的数据在未使用前可以保留，不被下一个块的寄存器分配冲掉，我们参照计算机函数调用的思想，设计了一个mem寄存器用来存储每个块执行后输出的变量。显然这样的方法比每个变量用一个寄存器所使用的寄存器还多，这并不是一个优秀的方法，该项目中是为了模拟实现左边算法的寄存器分配才出此下策。之后改进时可以替换为更好的算法。
+这些数据的特点是它们都来自于`fiction_head`
+
+2. 上述提到寄存器分配时块与块之间是独立考虑的，但为了使得块中的数据在未使用前可以保留，不被下一个块的寄存器分配冲掉，我们参照计算机函数调用的思想，设计了一个`mem`寄存器用来存储每个块执行后输出的变量。显然这样的方法比每个变量用一个寄存器所使用的寄存器还多，这并不是一个优秀的方法，该项目中是为了模拟实现左边算法的寄存器分配才出此下策。之后改进时可以替换为更好的算法。
 
 ### Part 4完成计算资源的绑定
 此部分由沈笑涵同学完成。
@@ -537,9 +510,9 @@ void HLS::generate_CFG() {
 `std::vector<int> Ainputregisters`：计算资源输入端、输出端绑定的寄存器一般不止一个，因此通过vector向量存储；
 
 
-##### 查找每一个块中计算结点node与寄存器绑定结果
+##### 查找每一个块中计算结点`node`与寄存器绑定结果
 
-该部分完成了对每一个DFG中的node结点和寄存器绑定结果的提取，以及该块内的寄存器绑定结果的查找，可以实现通过输入变量名查找绑定的寄存器编号
+该部分完成了对每一个`DFG`中的`node`结点和寄存器绑定结果的提取，以及该块内的寄存器绑定结果的查找，可以实现通过输入变量名查找绑定的寄存器编号
 
 ```c++
 	//提取每一个DFG中的node结点
@@ -549,9 +522,9 @@ void HLS::generate_CFG() {
 	//该函数完成了通过输入变量名和DFG块寄存器绑定结果，实现块内寄存器绑定结果的查找
 	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val);
 ```
-##### 实现将块内node结点与计算资源的绑定
+##### 实现将块内`node`结点与计算资源的绑定
 
-该计算资源的实例化结果和绑定结果分别存储在hls.h中新定义的两个变量中
+该计算资源的实例化结果和绑定结果分别存储在`HLS.h`中新定义的两个变量中
 ```c++
 	std::vector<computeresource> COR;
 	std::vector<std::vector<std::pair<int, int>>>  CSP;
@@ -566,9 +539,10 @@ void HLS::generate_CFG() {
 ```
 #### 技术细节：
 
-1.初始时生成一个队列，队列中压入目前状态下的所有入度为0的所有结点（即没有数据依赖的所有结点），并按照所需计算资源的种类（加法器、乘法器、除法器）分类，并将结果存储在三个vector迭代器中
+1.初始时生成一个队列，队列中压入目前状态下的所有入度为0的所有结点（即没有数据依赖的所有结点），并按照所需计算资源的种类（加法器、乘法器、除法器）分类，并将结果存储在三个`vector`迭代器中
 
-2.分别对三个vector迭代器进行操作，统计每个计算结点在不同编号的对应计算资源绑定的代价，从而生成匈牙利算法中的代价矩阵。这里，我考虑的代价为该计算资源为了绑定某一计算结点所额外增加的输入端数据选择器的输入个数：如果某一计算资源的两个输入变量分配的寄存器均未与该计算资源相连，那么其代价为2；若输入变量所在寄存器中有一个与该计算资源相连，那么代价为1；如果该计算结点两个输入寄存器均与该计算资源绑定，那么代价为0。该操作在以下函数中生成：
+2.分别对三个`vector`迭代器进行操作，统计每个计算结点在不同编号的对应计算资源绑定的代价，从而生成匈牙利算法中的代价矩阵。这里，我考虑的代价为该计算资源为了绑定某一计算结点所额外增加的输入端数据选择器的输入个数：如果某一计算资源的两个输入变量分配的寄存器均未与该计算资源相连，那么其代价为2；若输入变量所在寄存器中有一个与该计算资源相连，那么代价为1；如果该计算结点两个输入寄存器均与该计算资源绑定，那么代价为0。该操作在以下函数中生成：
+
 ```c++
 	std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,std::vector<int>list, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE,int flag,Hardware&hardware);
 ```
@@ -578,11 +552,13 @@ void HLS::generate_CFG() {
 	//生成最大匹配
 	int maxcompair(std::vector<std::vector<cost_matrix_node>>&matrix2);
 ```
-4.当某一时刻的所有计算结点均完成计算资源的匹配后，将这些计算结点标记为VISITED，并对计算资源绑定输入寄存器，同时将其后序计算结点的入度减一。再次重复步骤一，压入当前入度为0的所有计算结点，并按照以上流程操作，直至当前块内所有计算结点均完成计算资源的绑定。以上所有操作在以下函数中实现：
+4.当某一时刻的所有计算结点均完成计算资源的匹配后，将这些计算结点标记为`VISITED`，并对计算资源绑定输入寄存器，同时将其后序计算结点的入度减一。再次重复步骤一，压入当前入度为0的所有计算结点，并按照以上流程操作，直至当前块内所有计算结点均完成计算资源的绑定。以上所有操作在以下函数中实现：
+
 ```c++
 std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&list,std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::vector<int>>matrix, int flag, Hardware& hardware,int&k);
 ```
-5.匈牙利算法实现计算资源的绑定后，通过对绑定结果遍历，完成对各个计算资源的输出寄存器绑定。该操作在以下函数中实现：
+5.**匈牙利算法**实现计算资源的绑定后，通过对绑定结果遍历，完成对各个计算资源的输出寄存器绑定。该操作在以下函数中实现：
+
 ```c++
 void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi) 
 ```
@@ -632,9 +608,9 @@ public:
 	  Register& reg, std::string& _var)；
 ```
 
-`bool chooseReg（）`：默认`reg`下标为-1、`_var`为`NULL`作为未找到的结果。挑选出当前周期cycle、当前模块dfg下，选择器输入端所选取的寄存器reg，以及寄存器中存储的变量_var。这里要注意的是在不同块中活跃的寄存器可能不同，如果直接访问将会导致溢出错误，因此需要先结合寄存器绑定结果REGi，挑选出当前块中会使用到的所有寄存器编号，记为`std::vector<int> curDFGinput;`。之后，利用Register类的`getData()`函数判断当前周期寄存器`i`是否存有数据（记为`v`）。如果存有数据，由于一个寄存器可能会与多个计算资源相连，无法保证`v`一定是在选择器连接的计算资源中被使用的，因此还需要结合计算资源绑定结果，找到相关周期的节点语句node进行判断，得到最后的结果。
+`bool chooseReg（）`：默认`reg`下标为-1、`_var`为`NULL`作为未找到的结果。挑选出当前周期`cycle`、当前模块`dfg`下，选择器输入端所选取的寄存器`reg`，以及寄存器中存储的变量`_var`。这里要注意的是在不同块中活跃的寄存器可能不同，如果直接访问将会导致溢出错误，因此需要先结合寄存器绑定结果`REGi`，挑选出当前块中会使用到的所有寄存器编号，记为`std::vector<int> curDFGinput;`。之后，利用Register类的`getData()`函数判断当前周期寄存器`i`是否存有数据（记为`v`）。如果存有数据，由于一个寄存器可能会与多个计算资源相连，无法保证`v`一定是在选择器连接的计算资源中被使用的，因此还需要结合计算资源绑定结果，找到相关周期的节点语句node进行判断，得到最后的结果。
 
-经过小组讨论，Register类与Mux类仅用于表示连接的结构，可以反映门级连接，但实际上完成PJ的要求是生成RTL代码，并不需要使用到上述两个类。
+经过小组讨论，`Register`类与`Mux`类仅用于表示连接的结构，可以反映门级连接，但实际上完成`PJ`的要求是生成`RTL`代码，并不需要使用到上述两个类。
 
 ##### 最后是控制器类
 
@@ -790,56 +766,21 @@ void HLS::genFSM() {
 	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
 	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
 ```
-##### counter
-根据每个块的执行总周期不同，对`counter`在不同的时候指令，同时在每个块的最后一定需要跳转，所以还需要在最后将`branch_ready`置1。示例如下：
-```verilog
-	reg[31:0] counter;
-	always @(posedge ap_clk or negedge ap_rst_n)
-	begin
-	if(!ap_rst_n)
-	begin
-		counter <= 0;
-		branch_ready <= 1;
-	end
-	else if(CurrentState == state_fiction_head && counter == 0 && ap_start == 1'b1)
-	begin
-		counter <= 0;
-		branch_ready <= 1
-	end
-	else if(CurrentState == state_0 && counter == 1)
-	begin
-		counter <= 0;
-		branch_ready <= 1
-	end
-	else if(CurrentState == state_start && counter == 5)
-	begin
-		counter <= 0;
-		branch_ready <= 1
-	end
-	else if(CurrentState == state_calc && counter == 13)
-	begin
-		counter <= 0;
-		branch_ready <= 1
-	end
-	else if(CurrentState == state_ret && counter == 1)
-	begin
-		counter <= 0;
-		branch_ready <= 1
-	end
-	else
-		counter <= counter + 1;
-	end
-```
+##### 块内运行周期计数器
+根据每个块的执行总周期不同，对`counter`在不同的时候指令，同时在每个块的最后一定需要跳转，所以还需要在最后将`branch_ready`置1。
+
+在一个块内运行的周期数是固定的，这个逻辑被综合成了一个`always`逻辑块
+
 ##### 寄存器综合
 ###### 可以将op分为以下几类
-1. 计算类：OP_ASSIGN（赋值操作）OP_ADD（加法操作）OP_SUB（减法操作）OP_MUL（乘法操作）OP_DIV（除法操作）OP_LT（小于操作）OP_GT（大于操作）OP_LE（小于等于操作）OP_GE（大于等于操作）OP_EQ（等于操作）
-2. 访存类：OP_STORE（存储操作）OP_LOAD（载入操作）
-3. 跳转类：OP_BRANCK（跳转操作）
-4. phi类：OP_PHI（phi操作）
-5. 返回类：OP_RET（return操作）
-###### 每类op的寄存器综合形式如下
+1. 计算类：`OP_ASSIGN`（赋值操作）`OP_ADD`（加法操作）`OP_SUB`（减法操作）`OP_MUL`（乘法操作）`OP_DIV`（除法操作）`OP_LT`（小于操作）`OP_GT`（大于操作）`OP_LE`（小于等于操作）`OP_GE`（大于等于操作）`OP_EQ`（等于操作）
+2. 访存类：`OP_STORE`（存储操作）`OP_LOAD`（载入操作）
+3. 跳转类：`OP_BR`（跳转操作）
+4. phi类：`OP_PHI`（phi操作）
+5. 返回类：`OP_RET`（return操作）
+###### 每类`op`的寄存器综合形式如下
 1. 计算类：
-输入进行op对应运算符操作后存入输出寄存器，需要注意的是输入不一定是寄存器有可能是常数或函数输入这些不需要分配寄存器的数据，需要进行判断。（为了表示运算的周期，我们在运算的开始周期执行寄存器赋值，之后的运行的周期闲置）。示例如下：
+输入进行`op`对应运算符操作后存入输出寄存器，需要注意的是输入不一定是寄存器有可能是常数或函数输入这些不需要分配寄存器的数据，需要进行判断。（为了表示运算的周期，我们在运算的开始周期执行寄存器赋值，之后的运行的周期闲置）。示例如下：
 ```verilog
 	32'd7: begin
 		reg_1 <= reg_4 * reg_1
@@ -848,48 +789,49 @@ void HLS::genFSM() {
 	end
 	32'd9: begin
 	end
-	32'd10: begin
-	end
-	32'd11: begin
-	end
 ```
 2. 访存类：
-在起始周期将load或store的使能信号置1，地址寄存器存入相应的地址（对于store，在这个周期还需要将数据存入写寄存器中），在结束周期将load或store信号置0，对于load，在这个周期将要写如的数据存入对应寄存器。示例如下：
-###### ~store
-```verilog
-	32'd6: begin
-		b_we0 <= 1;
-		b_address0 <= reg_1;
-		b_ad0 <= reg_2;
-	end
-	32'd7: begin
-	end
-	32'd8: begin
-		b_we0 <= 0;
-	end
-```
-###### ~load
-```verilog
-	32'd4: begin
-		b_ce0 <= 1;
-		b_address0 <= reg_1
-	end
-		32'd5: begin
-	end
-		32'd6: begin
-		b_ce0 <= 0;
-		reg_1 <= b_q0
-	end
-```
+  在起始周期将`load`或`store`的使能信号置1，地址寄存器存入相应的地址（对于`store`，在这个周期还需要将数据存入写寄存器中），在结束周期将`load`或`store`信号置0，对于`load`，在这个周期将要写如的数据存入对应寄存器。示例如下：
+
+  - `store`
+
+  - ```verilog
+    	32'd6: begin
+    		b_we0 <= 1;
+    		b_address0 <= reg_1;
+    		b_ad0 <= reg_2;
+    	end
+    	32'd7: begin
+    	end
+    	32'd8: begin
+    		b_we0 <= 0;
+    	end
+    ```
+
+  - `load`
+
+  - ```verilog
+    	32'd4: begin
+    		b_ce0 <= 1;
+    		b_address0 <= reg_1
+    	end
+    		32'd5: begin
+    	end
+    		32'd6: begin
+    		b_ce0 <= 0;
+    		reg_1 <= b_q0
+    	end
+    ```
+
 3. 跳转类：
-将该块中所有要输出的数据存入对应的mem寄存器中。示例如下：
+将该块中所有要输出的数据存入对应的`mem`寄存器中。示例如下：
 ```verilog
 	32'd14: begin
 		Mem_i_inc <= reg_3
 		Mem_cr <= reg_1
 	end
 ```
-4. phi类：
+4. `phi`类：
 根据上一个块来确定数据选取。示例如下：
 ```verilog
 	32'd1: begin
@@ -911,14 +853,14 @@ void HLS::genFSM() {
 ```verilog
 	assign ap_return = reg_1;
 ```
-###### cond连线
+###### `cond`连线
 实际上是一个根据`CurrentState`的多路选择器。示例如下：
 ```verilog
 	assign cond = ((CurrentState == state_start) & reg_3) || ((CurrentState == state_cal) & reg_3);
 ```
 ## 项目测试
 
-### 测试文件 1 dotprod.v
+### 测试文件 1 `dotprod.v`
 
 #### IR文件由课程提供
 
@@ -952,7 +894,7 @@ ret:
 
 #### 测试结果：
 
-##### 实例化SRAM
+##### 实例化`SRAM`
 
 为了从数组中读数据，我们初始化了两个`SRAM`，`SRAM_a`，`SRAM_b`，这两个`SRAM` 的`module` 为生成的`module` 的访问数组的功能提供了便利。在这里为了方便起见，我们取`n=10`，然后在`SRAM_a`，`SRAM_b` 中存入了数据：
 
@@ -964,7 +906,7 @@ ret:
 
 我们对程序的预期结果是`220`；
 
-##### RTL电路图
+##### `RTL`电路图
 
 <img src="picture\dotprod_tbRTL.png" width="800px;" />
 
@@ -978,7 +920,7 @@ ret:
 
 测试的结果如上所示，我们在`testbench`中模拟了一个`SRAM`去为`a_q0`，`b_q0`进行赋值，然后我们接收来自我们的状态机的输入的使能信号，地址信号以及写入的数据，最后完成了此程序的仿真。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现。这与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出。
 
-### 测试文件 2 gcd.v
+### 测试文件 2 `gcd.v`
 
 #### IR文件由周翔同学提供
 
@@ -1025,17 +967,20 @@ ret:
 
 #### 测试结果：
 
-这里设置输入`a = 24`，`b = 56`，预期输出为8；`a = 361`，`b = 228`，预期输出为19。
+| 输入a | 输入B | 预期输出 | 实际输出 |
+| ----- | ----- | -------- | -------- |
+| 24    | 56    | 8        | 8        |
+| 361   | 228   | 19       | 19       |
 
 ##### 测试的结果波形：
 
-<img src="picture\gcd_tb_a24_b56.png" alt="tb" style="zoom:70%;" />
+<img src="picture\gcd_tb_a24_b56.png" alt="tb" width="800px;" />
 
-<img src="picture\gcd_tb_a361_b228.png" alt="tb" style="zoom:70%;" />
+<img src="picture\gcd_tb_a361_b228.png" alt="tb" width="800px;" />
 
 测试的结果如上所示。可以看到，在`ap_done`信号出现的时候，`ap_return`的结果已经正确而且稳定地出现，与我们的预期结果相符。因为进行了一些寄存器分配，所以`ap_return`的值并不是存储在一个固定的寄存器中，只有在最终才会由分配好的寄存器进行传出，因此我们关心的只是在`ap_done`信号跳变为`1`的时候`ap_return`的输出结果。
 
-### 测试文件 3 Sum.v
+### 测试文件 3 `Sum.v`
 
 #### IR文件由周翔同学提供
 
@@ -1091,6 +1036,6 @@ ret:
 
 ##### 测试的结果波形：
 
-<img src="picture\Sum_tb.png" alt="tb" style="zoom:70%;" />
+<img src="picture\Sum_tb.png" alt="tb" width="800px;" />
 
 测试的结果如上所示。可以看到，`b_ad1`的结果符合预期。在`ap_done`信号跳变为`1`时，`ap_return`的结果为`55`，即数组`a`元素之和，符合预期。
