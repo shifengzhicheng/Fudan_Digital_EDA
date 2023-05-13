@@ -13,7 +13,7 @@
 | -------- | ----------- |
 | 郑志宇   | 20307130176 |
 | 邱峻蓬   |             |
-| 任钰浩   |             |
+| 任钰浩   | 20307130243 |
 | 沈笑涵   | 20307130063 |
 | 周翔     | 20307130188 |
 
@@ -237,13 +237,7 @@ ret:
 	void outputfile();
 ```
 
-其中，函数`travelaround()`和`travelback()`是郑志宇同学给出的按照拓扑排序数据流图的方法，用作参考，并不参与项目功能的实现。其中，只介绍顺序遍历`travelaround()`，`travelback()`完全类似。`travelaround()`的具体的实现使用队列的数据结构，首先初始化节点的入度，取出所有入度为`0`的节点放入队列，入度为`0`代表节点并不依赖于同一个数据流图的其他节点，所以可以直接进入队列进行调度。
-
-而在主循环的过程是节点出队列，对节点进行操作，然后将后续节点的入度减小，并检查后续节点此时的入度。为`0`时进入队列。
-
-- 因为`phi`操作的特殊性，`phi`操作的入度理论上应该是`1`，但是实际上`phi`操作在数据流图中可能依赖多个变量，这样的可能导致实际上会有`phi`操作的节点的入度在小于`0`的时候才入栈。不能保证其入度恰好为`0`。虽然可以通过令`phi`操作的入度等于其依赖变量数目来完善这一部分程序，但逻辑上还是并没有进行调整。
-
-这一步的遍历是遍历项目的数据流图的基本操作。
+其中，函数`travelaround`和`travelback`是郑志宇同学给出的按照拓扑排序数据流图的方法，用作参考，并不参与项目功能的实现。
 
 ### Part 1生成数据流图以及控制流图
 
@@ -397,6 +391,88 @@ void HLS::generate_CFG() {
 ### Part 2完成周期的调度
 
 ### Part 3完成寄存器的绑定
+此部分由任钰浩同学完成。
+本部分根据周期调度的结果计算变量的生存周期，从而将变量与寄存器绑定。需要注意的是块与块之间是独立考虑的。
+
+其基本思想是根据调度结果，从输出开始往前遍历，生成每个操作数的生存周期。然后根据生存周期重叠的变量无法共享寄存器，不重叠的变量可以共享寄存器的原则进行寄存器分配。这实际上是一个区间染色问题，可以通过左边算法来实现快速求解最优解
+
+####函数及文件说明
+`├── HLS.h `
+
+```c++
+	// 每个块的寄存器分配结果
+	std::vector<std::vector<std::pair<std::string, int>>> REG;
+```
+`├── HLS.cpp `
+
+```c++
+	// 执行寄存器分配和绑定
+	perform_register_allocation_and_binding();
+```
+`├── leftAlgorithm.h `
+
+#####生存周期结构体的定义
+```c++
+	struct varPeriod {
+		std::string var;//变量名
+    		int startp;//起始周期
+    		int stopp;//结束周期
+	};
+```
+这个结构体是为了提炼出CFG中对寄存器分配有用的信息，使之后的左边算法编写只用聚焦与这个结构体，可以在CFG完成前就开始编写，提高项目的并行度。
+#####根据调度结果得到生存周期
+```c++
+	std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
+```
+#####左边算法分配寄存器
+```c++
+	std::vector<std::pair<std::string, int>> leftAlgorithm(std::vector<varPeriod> V);
+```
+左边算法将区间图中的区间按其左边（区间起点）排序，然后从排序的队列中，取出一个区间，逐个从剩下的区间里根据左边顺序，逐个找到与前面区间不重叠的区间，给相同“着色”（分配寄存器），重复上述操作，知道所有区间（变量）都被正确“着色”（分配寄存器）
+实际操作中是定义一个`endpos`，将`startp`大于`endpos`的变量分配给该寄存器，然后刷新`endpos`为该变量的`stopp`，知道没有变量可以分配，给出新的寄存器然后将`endpos`重置为0。
+```c++
+	while (!V.empty())
+    	{
+        	varPeriod v = V[0];
+        	ans.push_back(make_pair(v.var, reg));
+        	int endpos = v.stopp;
+        	V.erase(V.begin());
+        	for (std::vector<varPeriod>::iterator iter = V.begin(); iter != V.end();)
+        	{
+            	if ((*iter).startp > endpos)
+            	{
+                	ans.push_back(make_pair((*iter).var, reg));
+                	endpos = (*iter).stopp;
+                	iter = V.erase(iter);
+            	}
+            	else
+                	iter++;
+        	}
+        	reg++;
+    	}
+```
+####技术细节
+1.有的数据不用分配寄存器，所以并不需要在`graph2VarPeriods`中转化为`varPeriod`，这类数据分两类，一是常数，而是该函数的输入，需要在`graph2VarPeriods`函数中识别并将其排除
+常数：
+```c++
+	else if (!isPureNumber(*varIter))
+        	varMap[*varIter] = (*iter).getTend();
+```
+函数输入：
+这些数据的特点是它们都来自与`fiction_head`
+```c++
+	if (iter->From_Block == std::string("fiction_head"))
+            	mouduleInput.push_back(iter->InputBlockVarName);
+```
+```c++
+	if (find(mouduleInput.begin(), mouduleInput.end(), *varIter) == mouduleInput.end())//判断不是输入数据
+                if (varMap.find(*varIter) != varMap.end())
+                {
+                    if (varMap[*varIter] < (*iter).getTend())
+                        varMap[*varIter] = (*iter).getTend();
+                }
+```
+2.上述提到寄存器分配时块与块之间是独立考虑的，但为了使得块中的数据在未使用前可以保留，不被下一个块的寄存器分配冲掉，我们参照计算机函数调用的思想，设计了一个mem寄存器用来存储每个块执行后输出的变量。显然这样的方法比每个变量用一个寄存器所使用的寄存器还多，这并不是一个优秀的方法，该项目中是为了模拟实现左边算法的寄存器分配才出此下策。之后改进时可以替换为更好的算法。
 
 ### Part 4完成计算资源的绑定
 此部分由沈笑涵同学完成。
@@ -610,10 +686,6 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 
 这一部分由郑志宇同学与任钰浩同学共同完成，郑志宇同学负责了数据流图的生成，所以负责状态机的跳转部分以及`module`块的生成。任钰浩同学负责寄存器的绑定部分，所以负责寄存器的行为的综合。
 
-#### 生成`module`以及状态机的跳转逻辑
-
-这一部分由郑志宇同学完成
-
 `├── HLS.cpp `
 
 `│   ├── genFSM();`
@@ -621,6 +693,10 @@ void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> 
 `├── FSMachine.h`
 
 `├── FSMachine.cpp`
+
+#### 生成`module`以及状态机的跳转逻辑
+
+这一部分由郑志宇同学完成
 
 ##### 函数及文件说明
 
@@ -706,7 +782,140 @@ void HLS::genFSM() {
 <img src="picture\FSM.png" width="800px;" />
 
 生成一个`always`块的语句，对于每个块都生成一个`if`逻辑语句块，进行跳转条件的设置，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
-
+#### 实现寄存器与连线的行为综合
+这部分由任钰浩完成
+#####接口说明
+```c++
+	void CounterGener(std::vector<std::vector<Cycle>> &Cycles, ControlFlowGraph &CFG);
+	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
+	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
+```
+#####counter
+根据每个块的执行总周期不同，对`counter`在不同的时候指令，同时在每个块的最后一定需要跳转，所以还需要在最后将`branch_ready`置1。示例如下：
+```verilog
+	reg[31:0] counter;
+	always @(posedge ap_clk or negedge ap_rst_n)
+	begin
+	if(!ap_rst_n)
+	begin
+		counter <= 0;
+		branch_ready <= 1;
+	end
+	else if(CurrentState == state_fiction_head && counter == 0 && ap_start == 1'b1)
+	begin
+		counter <= 0;
+		branch_ready <= 1
+	end
+	else if(CurrentState == state_0 && counter == 1)
+	begin
+		counter <= 0;
+		branch_ready <= 1
+	end
+	else if(CurrentState == state_start && counter == 5)
+	begin
+		counter <= 0;
+		branch_ready <= 1
+	end
+	else if(CurrentState == state_calc && counter == 13)
+	begin
+		counter <= 0;
+		branch_ready <= 1
+	end
+	else if(CurrentState == state_ret && counter == 1)
+	begin
+		counter <= 0;
+		branch_ready <= 1
+	end
+	else
+		counter <= counter + 1;
+	end
+```
+#####寄存器综合
+######可以将op分为以下几类
+1.计算类：OP_ASSIGN（赋值操作）OP_ADD（加法操作）OP_SUB（减法操作）OP_MUL（乘法操作）OP_DIV（除法操作）OP_LT（小于操作）OP_GT（大于操作）OP_LE（小于等于操作）OP_GE（大于等于操作）OP_EQ（等于操作）
+2.访存类：OP_STORE（存储操作）OP_LOAD（载入操作）
+3.跳转类：OP_BRANCK（跳转操作）
+4.phi类：OP_PHI（phi操作）
+5.返回类：OP_RET（return操作）
+######每类op的寄存器综合形式如下
+1.计算类：
+输入进行op对应运算符操作后存入输出寄存器，需要注意的是输入不一定是寄存器有可能是常数或函数输入这些不需要分配寄存器的数据，需要进行判断。（为了表示运算的周期，我们在运算的开始周期执行寄存器赋值，之后的运行的周期闲置）。示例如下：
+```verilog
+	32'd7: begin
+		reg_1 <= reg_4 * reg_1
+	end
+	32'd8: begin
+	end
+	32'd9: begin
+	end
+	32'd10: begin
+	end
+	32'd11: begin
+	end
+```
+2.访存类：
+在起始周期将load或store的使能信号置1，地址寄存器存入相应的地址（对于store，在这个周期还需要将数据存入写寄存器中），在结束周期将load或store信号置0，对于load，在这个周期将要写如的数据存入对应寄存器。示例如下：
+~store
+```verilog
+	32'd6: begin
+		b_we0 <= 1;
+		b_address0 <= reg_1;
+		b_ad0 <= reg_2;
+	end
+	32'd7: begin
+	end
+	32'd8: begin
+		b_we0 <= 0;
+	end
+```
+~load
+```verilog
+	32'd4: begin
+		b_ce0 <= 1;
+		b_address0 <= reg_1
+	end
+		32'd5: begin
+	end
+		32'd6: begin
+		b_ce0 <= 0;
+		reg_1 <= b_q0
+	end
+```
+3.跳转类：
+将该块中所有要输出的数据存入对应的mem寄存器中。示例如下：
+```verilog
+	32'd14: begin
+		Mem_i_inc <= reg_3
+		Mem_cr <= reg_1
+	end
+```
+4.phi类：
+根据上一个块来确定数据选取。示例如下：
+```verilog
+	32'd1: begin
+		if(LastState == state_0)
+			reg_1 <= 0
+		elseif(LastState == state_calc)
+			reg_1 <= reg_1
+		if(LastState == state_0)
+			reg_2 <= reg_2
+		elseif(LastState == state_calc)
+			reg_2 <= reg_3
+	end
+```
+5.返回类：
+无操作。
+#####连线综合
+######返回结果连线
+示例如下：
+```verilog
+	assign ap_return = reg_1;
+```
+######cond连线
+实际上是一个根据`CurrentState`的多路选择器。示例如下：
+```verilog
+	assign cond = ((CurrentState == state_start) & reg_3) || ((CurrentState == state_cal) & reg_3);
+```
 ## 项目测试
 
 ### 测试文件 1 dotprod.v
@@ -733,7 +942,6 @@ calc:
 ret:
 	return cl;
 ```
-
 #### 测试文件由郑志宇同学提供：
 
 `├── testfile` 
@@ -817,10 +1025,7 @@ ret:
 
 #### 测试结果：
 
-| 输入a | 输入B | 预期输出 | 实际输出 |
-| ----- | ----- | -------- | -------- |
-| 24    | 56    | 8        | 8        |
-| 361   | 228   | 19       | 19       |
+这里设置输入`a = 24`，`b = 56`，预期输出为8；`a = 361`，`b = 228`，预期输出为19。
 
 ##### 测试的结果波形：
 
