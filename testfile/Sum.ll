@@ -1,4 +1,4 @@
-define int sum(int a[], int n)
+define int Sum(int a[], int b[], int n)
     c = 0;
 start:
     i = phi(0, 0, i_inc, calc);
@@ -8,12 +8,12 @@ start:
 
 calc:
     ai = load(a, i);
-    temp = i - 1;
-    sum_c = load(b, temp);
-    sum_c_a = sum_c + ai;
-	store(b, i, sum_c_a);
+    temp = sum + ai;
+    store(b, i, temp);
     i_inc = i + 1;
     br start;
 
 ret:
-    return sum;
+    num = n - 1;
+    res = load(b, num);
+    return res;
