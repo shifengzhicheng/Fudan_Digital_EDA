@@ -453,12 +453,12 @@ void HLS::generate_CFG() {
 ```
 #### 技术细节
 1. 有的数据不用分配寄存器，所以并不需要在`graph2VarPeriods`中转化为`varPeriod`，这类数据分两类，一是常数，而是该函数的输入，需要在`graph2VarPeriods`函数中识别并将其排除
-常数：
+###### 常数：
 ```c++
 	else if (!isPureNumber(*varIter))
         	varMap[*varIter] = (*iter).getTend();
 ```
-函数输入：
+###### 函数输入：
 这些数据的特点是它们都来自与`fiction_head`
 ```c++
 	if (iter->From_Block == std::string("fiction_head"))
@@ -855,7 +855,7 @@ void HLS::genFSM() {
 ```
 2. 访存类：
 在起始周期将load或store的使能信号置1，地址寄存器存入相应的地址（对于store，在这个周期还需要将数据存入写寄存器中），在结束周期将load或store信号置0，对于load，在这个周期将要写如的数据存入对应寄存器。示例如下：
-~store
+###### ~store
 ```verilog
 	32'd6: begin
 		b_we0 <= 1;
@@ -868,7 +868,7 @@ void HLS::genFSM() {
 		b_we0 <= 0;
 	end
 ```
-~load
+###### ~load
 ```verilog
 	32'd4: begin
 		b_ce0 <= 1;
