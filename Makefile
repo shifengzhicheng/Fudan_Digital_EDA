@@ -21,4 +21,4 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CFLAGS) -c -o $@ $<
 
 clean:
-	del /Q /F $(TARGET) $(OBJS) 
+	del /Q /F $(TARGET) $(subst /,\,$(OBJS))
