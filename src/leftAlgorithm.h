@@ -3,7 +3,8 @@
 #include <algorithm>
 #include "dataflowgraph.h"
 
-struct varPeriod {
+struct varPeriod
+{
     std::string var;
     int startp;
     int stopp;
@@ -44,19 +45,18 @@ std::vector<std::pair<std::string, int>> leftAlgorithm(std::vector<varPeriod> V)
 bool isPureNumber(std::string str)
 {
     bool isPureNumber = true;
-    for (char c : str) {
-        if (!std::isdigit(c)) {
+    for (char c : str)
+    {
+        if (!std::isdigit(c))
+        {
             isPureNumber = false;
             break;
-
-
         }
     }
     return isPureNumber;
 }
 
-
-std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG)
+std::vector<varPeriod> graph2VarPeriods(DataFlowGraph &DFG)
 {
     std::vector<node> m_ops = DFG.get_opList();
     std::unordered_map<std::string, int> m_map = DFG.myOutvartable();
@@ -90,13 +90,13 @@ std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG)
         {
             int startp = m_ops[(*miter).second].getTend() + 1;
             int endp = varMap[var];
-            varPeriods.push_back(varPeriod{ var, startp, endp });
-        }  
+            varPeriods.push_back(varPeriod{var, startp, endp});
+        }
     }
     return varPeriods;
 }
 
-std::vector<std::pair<std::string, int>> binding(DataFlowGraph& DFG)
+std::vector<std::pair<std::string, int>> binding(DataFlowGraph &DFG)
 {
     return leftAlgorithm(graph2VarPeriods(DFG));
 }
