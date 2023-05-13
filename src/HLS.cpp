@@ -25,15 +25,14 @@ void HLS::generate_CFG()
 		// 将这个节点的图取出来
 		DataFlowGraph &DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
 		std::cout << std::endl;
-		std::cout << std::endl;
-		std::cout << "In Block: " << DFG.get_label() + ":" << std::endl;
+		std::cout << "****************   " << DFG.get_label() << "    ******************" << std::endl;
 		std::cout << std::endl;
 		std::cout << "InputList of DataflowGraph:" << std::endl;
 		for (int i = 0; i < DFG.get_inputList().size(); i++)
 		{
 			std::cout << "From Block: " + DFG.get_inputList()[i].From_Block + ": " + DFG.get_inputList()[i].InputBlockVarName << std::endl;
 		}
-		std::cout << std::endl;
+		std::cout << "-------------" << std::endl;
 		// 图初始化
 		DFG.Initialize();
 		// 压入所有入度为0的节点
@@ -53,7 +52,8 @@ void HLS::generate_CFG()
 			tq.pop();
 			DFG.Mark[CurrentNode] = VISITED;
 			// 打印信息
-			std::cout << "CurrentNode index in DFG: " << CurrentNode << std::endl;
+			std::cout << "--"
+					  << "CurrentNode index in DFG: " << CurrentNode << "--" << std::endl;
 			std::cout << "InputVar of CurrentNode: " << std::endl;
 			for (int i = 0; i < DFG.get_opList()[CurrentNode].InputVar.size(); i++)
 				std::cout << DFG.get_opList()[CurrentNode].InputVar[i] << std::endl;
