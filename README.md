@@ -496,7 +496,40 @@ public:
 
 `├── schedule.h`
 
-##### 调度头文件中定义了硬件类`Hardware`和周期记录类`Period_Rec`。
+##### 调度头文件中定义了硬件类`Hardware`，存在默认构造函数即默认运算资源个数。
+
+```c++
+private:
+    int adder;
+    int mul;
+    int div;
+    int sram;
+    int adder_available;
+    int mul_available;
+    int div_available;
+    int sram_available;
+
+public:
+    Hardware()
+    {
+        adder = 2;
+        mul = 1;
+        div = 1;
+        sram = 1;
+        adder_available = adder;
+        mul_available = mul;
+        div_available = div;
+        sram_available = sram;
+    }
+```
+
+##### 还定义了周期类`Period_Rec`，存储`ASAP`调度和`ALAP`调度结果，第一个`int`为运算操作开始的周期，第二个`int`为运算操作结束的周期，`vector`下标为对应运算操作的索引。
+
+```c++
+private:
+    std::vector<std::pair<int, int>> ASAP_RES;
+    std::vector<std::pair<int, int>> ALAP_RES;
+```
 
 `├── schedule.cpp`
 
