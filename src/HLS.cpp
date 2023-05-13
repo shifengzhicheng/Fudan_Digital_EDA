@@ -206,7 +206,10 @@ void HLS::perform_calculate_allocation_and_binding() {
 	std::vector<computeresource> CORE;
 	
 	int i = 0;
+	std::cout << "Caculate Allocation and Binding results:" << std::endl;
 	for (std::vector<graph_node>::iterator iter = DFGS.begin(); iter != DFGS.end(); iter++){
+		std::string lableName = DFGS[i].DFG.get_label();
+		std::cout << lableName << ":" << std::endl;
 		Hardware hardware;
 		CSP.push_back(bindcomputeresource((iter->DFG), REG[i], CORE, hardware));
 		i++;
@@ -217,6 +220,8 @@ void HLS::perform_calculate_allocation_and_binding() {
 		bindoutputregister(DFGS[i].DFG, REG[i], CORE, CSP[i]);
 	}
 	COR = CORE;
+	std::cout << std::endl;
+	std::cout << std::endl;
 	std::cout <<"Finsh Calculate Allocation and Binding"<< std::endl;
 	std::cout << std::endl;
 	std::cout << std::endl;
