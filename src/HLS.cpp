@@ -199,7 +199,6 @@ void HLS::perform_calculate_allocation_and_binding() {
 		Hardware hardware;
 		CSP.push_back(bindcomputeresource((iter->DFG), REG[i], CORE, hardware));
 		i++;
-		std::cout << std::endl;
 	}
 	i = 0;
 	//绑定输出寄存器
@@ -225,7 +224,6 @@ void HLS::synthesize_control_logic() {
 		controller.generateCycles(_REG, CFG);
 		std::vector<Cycle> Cycle = controller.getCycle();
 		Cycles.push_back(Cycle);
-		std::cout << "\n\n\n\n";
 		iter2++;
 	}
 	std::cout <<"Finsh Synthesize Control Logic"<< std::endl;
