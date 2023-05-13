@@ -396,7 +396,7 @@ void HLS::generate_CFG() {
 
 其基本思想是根据调度结果，从输出开始往前遍历，生成每个操作数的生存周期。然后根据生存周期重叠的变量无法共享寄存器，不重叠的变量可以共享寄存器的原则进行寄存器分配。这实际上是一个区间染色问题，可以通过左边算法来实现快速求解最优解
 
-####函数及文件说明
+#### 函数及文件说明
 `├── HLS.h `
 
 ```c++
@@ -411,7 +411,7 @@ void HLS::generate_CFG() {
 ```
 `├── leftAlgorithm.h `
 
-#####生存周期结构体的定义
+##### 生存周期结构体的定义
 ```c++
 	struct varPeriod {
 		std::string var;//变量名
@@ -420,7 +420,7 @@ void HLS::generate_CFG() {
 	};
 ```
 这个结构体是为了提炼出CFG中对寄存器分配有用的信息，使之后的左边算法编写只用聚焦与这个结构体，可以在CFG完成前就开始编写，提高项目的并行度。
-#####根据调度结果得到生存周期
+##### 根据调度结果得到生存周期
 ```c++
 	std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
 ```
@@ -451,8 +451,8 @@ void HLS::generate_CFG() {
         	reg++;
     	}
 ```
-####技术细节
-1.有的数据不用分配寄存器，所以并不需要在`graph2VarPeriods`中转化为`varPeriod`，这类数据分两类，一是常数，而是该函数的输入，需要在`graph2VarPeriods`函数中识别并将其排除
+#### 技术细节
+1. 有的数据不用分配寄存器，所以并不需要在`graph2VarPeriods`中转化为`varPeriod`，这类数据分两类，一是常数，而是该函数的输入，需要在`graph2VarPeriods`函数中识别并将其排除
 常数：
 ```c++
 	else if (!isPureNumber(*varIter))
@@ -472,7 +472,7 @@ void HLS::generate_CFG() {
                         varMap[*varIter] = (*iter).getTend();
                 }
 ```
-2.上述提到寄存器分配时块与块之间是独立考虑的，但为了使得块中的数据在未使用前可以保留，不被下一个块的寄存器分配冲掉，我们参照计算机函数调用的思想，设计了一个mem寄存器用来存储每个块执行后输出的变量。显然这样的方法比每个变量用一个寄存器所使用的寄存器还多，这并不是一个优秀的方法，该项目中是为了模拟实现左边算法的寄存器分配才出此下策。之后改进时可以替换为更好的算法。
+2. 上述提到寄存器分配时块与块之间是独立考虑的，但为了使得块中的数据在未使用前可以保留，不被下一个块的寄存器分配冲掉，我们参照计算机函数调用的思想，设计了一个mem寄存器用来存储每个块执行后输出的变量。显然这样的方法比每个变量用一个寄存器所使用的寄存器还多，这并不是一个优秀的方法，该项目中是为了模拟实现左边算法的寄存器分配才出此下策。之后改进时可以替换为更好的算法。
 
 ### Part 4完成计算资源的绑定
 此部分由沈笑涵同学完成。
@@ -784,13 +784,13 @@ void HLS::genFSM() {
 生成一个`always`块的语句，对于每个块都生成一个`if`逻辑语句块，进行跳转条件的设置，状态机对时钟`ap_clk`的`posedge`敏感。在接收到跳转信号`branch_ready`以及跳转条件`cond`之后进行跳转。不跳转`branch_ready`为 0，无条件跳转只需要`cond`为 1即可，为真为假跳转则需要`cond`的指示来实现。
 #### 实现寄存器与连线的行为综合
 这部分由任钰浩完成
-#####接口说明
+##### 接口说明
 ```c++
 	void CounterGener(std::vector<std::vector<Cycle>> &Cycles, ControlFlowGraph &CFG);
 	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
 	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
 ```
-#####counter
+##### counter
 根据每个块的执行总周期不同，对`counter`在不同的时候指令，同时在每个块的最后一定需要跳转，所以还需要在最后将`branch_ready`置1。示例如下：
 ```verilog
 	reg[31:0] counter;
@@ -830,15 +830,15 @@ void HLS::genFSM() {
 		counter <= counter + 1;
 	end
 ```
-#####寄存器综合
-######可以将op分为以下几类
-1.计算类：OP_ASSIGN（赋值操作）OP_ADD（加法操作）OP_SUB（减法操作）OP_MUL（乘法操作）OP_DIV（除法操作）OP_LT（小于操作）OP_GT（大于操作）OP_LE（小于等于操作）OP_GE（大于等于操作）OP_EQ（等于操作）
-2.访存类：OP_STORE（存储操作）OP_LOAD（载入操作）
-3.跳转类：OP_BRANCK（跳转操作）
-4.phi类：OP_PHI（phi操作）
-5.返回类：OP_RET（return操作）
-######每类op的寄存器综合形式如下
-1.计算类：
+##### 寄存器综合
+###### 可以将op分为以下几类
+1. 计算类：OP_ASSIGN（赋值操作）OP_ADD（加法操作）OP_SUB（减法操作）OP_MUL（乘法操作）OP_DIV（除法操作）OP_LT（小于操作）OP_GT（大于操作）OP_LE（小于等于操作）OP_GE（大于等于操作）OP_EQ（等于操作）
+2. 访存类：OP_STORE（存储操作）OP_LOAD（载入操作）
+3. 跳转类：OP_BRANCK（跳转操作）
+4. phi类：OP_PHI（phi操作）
+5. 返回类：OP_RET（return操作）
+###### 每类op的寄存器综合形式如下
+1. 计算类：
 输入进行op对应运算符操作后存入输出寄存器，需要注意的是输入不一定是寄存器有可能是常数或函数输入这些不需要分配寄存器的数据，需要进行判断。（为了表示运算的周期，我们在运算的开始周期执行寄存器赋值，之后的运行的周期闲置）。示例如下：
 ```verilog
 	32'd7: begin
@@ -853,7 +853,7 @@ void HLS::genFSM() {
 	32'd11: begin
 	end
 ```
-2.访存类：
+2. 访存类：
 在起始周期将load或store的使能信号置1，地址寄存器存入相应的地址（对于store，在这个周期还需要将数据存入写寄存器中），在结束周期将load或store信号置0，对于load，在这个周期将要写如的数据存入对应寄存器。示例如下：
 ~store
 ```verilog
@@ -881,7 +881,7 @@ void HLS::genFSM() {
 		reg_1 <= b_q0
 	end
 ```
-3.跳转类：
+3. 跳转类：
 将该块中所有要输出的数据存入对应的mem寄存器中。示例如下：
 ```verilog
 	32'd14: begin
@@ -889,7 +889,7 @@ void HLS::genFSM() {
 		Mem_cr <= reg_1
 	end
 ```
-4.phi类：
+4. phi类：
 根据上一个块来确定数据选取。示例如下：
 ```verilog
 	32'd1: begin
@@ -903,15 +903,15 @@ void HLS::genFSM() {
 			reg_2 <= reg_3
 	end
 ```
-5.返回类：
+5. 返回类：
 无操作。
-#####连线综合
-######返回结果连线
+##### 连线综合
+###### 返回结果连线
 示例如下：
 ```verilog
 	assign ap_return = reg_1;
 ```
-######cond连线
+###### cond连线
 实际上是一个根据`CurrentState`的多路选择器。示例如下：
 ```verilog
 	assign cond = ((CurrentState == state_start) & reg_3) || ((CurrentState == state_cal) & reg_3);
