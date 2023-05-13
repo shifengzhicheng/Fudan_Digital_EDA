@@ -3,6 +3,7 @@
 #include "schedule.h"
 #include "Hungarian_algorithm.h"
 #include "control_logic.h"
+#include <iostream>
 #include <queue>
 // 第一部分是基于读到的资源创建块的关系图，块内是不同的有向无环图
 /* 这个部分接收的参数是基本块的向量bbs，函数的fn_name，输入的变量vars，以及返回值ret_type
@@ -13,9 +14,76 @@
   然后get_oprand(k)得到第k个操作数(从0开始)
   最后这个操作将整个函数变成一个完整的，因为循环存在，图是有环的
   但因为phi操作代表的依赖是或关系，而且中间存在branch */
-void HLS::generate_CFG() {
+  void HLS::generate_CFG() {
 	// 通过IR生成数据流图以及控制流图
 	CFG = ControlFlowGraph(parsered);
+	// 遍历DFGs向量
+	for (int DFGNode = 0; DFGNode < getCFG().getDFGNodes().size(); DFGNode++) {
+		// 遍历DFGs[DFGNode]的每一个节点，初始节点为0
+		// 将这个节点的图取出来
+		DataFlowGraph& DFG = this->getCFG().getDFGNodes()[DFGNode].DFG;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		std::cout << "In Block: "<<DFG.get_label()+":" << std::endl;
+		std::cout << std::endl;
+		std::cout<<"InputList of DataflowGraph:" << std::endl;
+		for (int i = 0; i < DFG.get_inputList().size(); i++) {
+			std::cout<< "From Block: "+DFG.get_inputList()[i].From_Block + ": "
+				+ DFG.get_inputList()[i].InputBlockVarName << std::endl;
+		}
+		std::cout << std::endl;
+		// 图初始化
+		DFG.Initialize();
+		// 压入所有入度为0的节点
+		int CurrentNode;
+		std::queue<int> tq;
+		for (int i = 0; i < DFG.get_opList().size(); i++) {
+			if (DFG.InVertex[i] == 0) {
+				tq.push(i);
+			}
+		}
+		// 拓扑排序遍历
+		while (!tq.empty()) {
+			CurrentNode = tq.front();
+			tq.pop();
+			DFG.Mark[CurrentNode] = VISITED;
+			// 打印信息
+			std::cout << "CurrentNode index in DFG: " << CurrentNode << std::endl;
+			std::cout << "InputVar of CurrentNode: " << std::endl;
+			for(int i=0;i< DFG.get_opList()[CurrentNode].InputVar.size();i++)
+				std::cout << DFG.get_opList()[CurrentNode].InputVar[i] << std::endl;
+			std::cout << "ToVertex Index of CurrentNode: " << std::endl;
+			for (int i = 0; i < DFG.ToVertex(CurrentNode).size(); i++)
+				std::cout << "Node Index: " << DFG.ToVertex(CurrentNode)[i] << "; " << std::endl;
+			
+			for (int i = 0; i < DFG.ToVertex(CurrentNode).size(); i++) {
+				// 得到第i个下一节点，如果这个节点这某个输入变量依赖于当前节点
+				int nextNodeIndex = DFG.ToVertex(CurrentNode)[i];
+				node& nextNode = DFG.get_opList()[nextNodeIndex];
+				// 根据第i个节点的输入变量情况，减少入度
+				DFG.InVertex[nextNodeIndex]--;
+				// 入度小于等于0则进入队列
+				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] == 0) {
+					tq.push(DFG.ToVertex(CurrentNode)[i]);
+				}
+			}
+		}
+		std::cout << std::endl;
+		std::cout << "OutputList of DataflowGraph:" << std::endl;
+		for (int i = 0; i < DFG.get_outputList().size(); i++) {
+			std::cout << "To Block: " + DFG.get_outputList()[i].To_Block + ": "
+				+ DFG.get_outputList()[i].OutBlockVarName << std::endl;
+		}
+		std::cout << std::endl;
+		std::cout << "Branch of DataflowGraph:" << std::endl;
+		for (int i = 0; i < DFG.get_Branches().size(); i++) {
+			std::cout << "With Condition: "<< DFG.get_Branches()[i].cond<<"," 
+				<< DFG.get_Branches()[i].From_Block + "->"
+				+ DFG.get_Branches()[i].To_Block << std::endl;
+		}
+		std::cout << std::endl;
+		std::cout << std::endl;
+	}
 }
 
 void HLS::setTestTime() {
@@ -56,7 +124,7 @@ void HLS::travelaround() {
 				// 根据第i个节点的输入变量情况，减少入度
 				DFG.InVertex[nextNodeIndex]--;
 				// 入度小于等于0则进入队列
-				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] <= 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
+				if (DFG.InVertex[DFG.ToVertex(CurrentNode)[i]] == 0 && DFG.Mark[DFG.ToVertex(CurrentNode)[i]] == UNVISITED) {
 					tq.push(DFG.ToVertex(CurrentNode)[i]);
 				}
 			}
@@ -95,7 +163,7 @@ void HLS::travelback() {
 				// 根据第i个节点的输入变量情况，减少前面节点的出度
 				DFG.OutVertex[ForeNodeIndex]--;
 				// 入度小于等于0则进入队列
-				if (DFG.OutVertex[ForeNodeIndex] <= 0 && DFG.Mark[ForeNodeIndex] == UNVISITED) {
+				if (DFG.OutVertex[ForeNodeIndex] == 0 && DFG.Mark[ForeNodeIndex] == UNVISITED) {
 					tq.push(ForeNodeIndex);
 				}
 			}
@@ -197,6 +265,7 @@ void HLS::outputfile() {
 	output_file << "endmodule" << std::endl;
 	// 关闭文件
 	output_file.close();
+	std::cout<<"Output file: "<<filepath << std::endl;
 }
 
 // 第二部分是基于有向无环图进行拓扑排序，得到每个计算单元的一个基本的时序约束
