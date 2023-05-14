@@ -252,6 +252,7 @@ public:
 				for (int m = 0; m < DFG.get_outputList().size(); m++) {
 					Statement temp;
 					temp.optype = OP_BR;
+					temp.compute_resource_index = -1;
 					temp.vars.push_back(DFG.get_outputList()[m].OutBlockVarName);
 					temp.regs.push_back(findregister(_REG, temp.vars[0]));
 					temp.outreg = CFG.Memtable()[temp.vars[0]];
@@ -324,9 +325,13 @@ public:
 			else {
 				//对每个OP进行遍历
 				int opType = List[i].element.getOPtype();	//每句话的optype
-				int compute_index;							//每句话绑定的计算资源
+				int compute_index = -1;							//每句话绑定的计算资源
 				int reg_return;
-				compute_index = CSP[num_node].second;		//每句话绑定的计算资源
+				for(int x = 0; x < CSP.size(); x ++){
+					if(CSP[i].first == i)
+						compute_index = CSP[i].second;
+				}
+				//compute_index = CSP[num_node].second;		//每句话绑定的计算资源
 				reg_return = findregister(_REG, List[i].element.getOutputvar());
 
 				std::vector<std::string> inputvars = List[i].InputVar;
@@ -356,6 +361,7 @@ public:
 			std::string tempstr = DFG.get_inputList()[m].InputBlockVarName;
 			if (findstr(CFG.getDataSet(), tempstr)) {
 				Statement temp;
+				temp.compute_resource_index = -1;
 				temp.vars.push_back(tempstr);
 				temp.regs.push_back(CFG.Memtable()[tempstr]);
 				temp.outreg = findregister(_REG, tempstr);
