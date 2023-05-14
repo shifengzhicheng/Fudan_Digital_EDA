@@ -41,7 +41,7 @@
 
 - `visual studio 2019`及以上版本能正常打开项目中的所有文件
 - 注意`src`编码格式为`Unicode(UTF-8)`
-- 生成一个`hls`的可执行文件能在`linux`下运行，`hls.exe` 能够在`windows` 下运行。
+- 生成一个`hls.exe` 的可执行文件能够在`windows` 下运行。如果想要生成`Linux`下的`Makefile`，可以修改一下`Makefile`文件。
 
 #### 使用方式
 
@@ -59,6 +59,30 @@
 ./hls testfile\dotprod.ll
 ```
 
+##### cmd中运行结果示意：
+
+```bash
+Result of CFG && DFG
+...
+...
+Finsh Register Allocation and Binding
+...
+...
+Finsh Scheduling
+...
+...
+Finsh Calculate Allocation and Binding
+...
+...
+Finsh Synthesize Control Logic
+
+
+Finsh Generate Finate Sate Machine.
+
+
+Output file: testfile/dotprod.v
+```
+
 ### `IR`文件格式声明
 
 #### 变量：
@@ -72,7 +96,7 @@ define int foo(int a, int b);
 
 返回值可以是`int`和`void`。
 
-**要注意`IR` 文件不应当出现一个变量既是表达式的输入变量，又同时作为表达式的输出变量的形式，我们认为这是不符合`IR` 文件的格式规范的行为。**
+**要注意`IR` 文件不应当出现一个变量既是表达式的输入变量，又同时作为表达式的输出变量的形式，我们认为这是不符合`IR` 文件的格式规范的行为。**同时，我们并没有对`parser`文件进行修改，所以`parser`的一些不合理的遗留问题并没有进行针对性解决，其对格式的要求以及对变量的检查方面的工作并不完善。所以很多时候，能够解析的语句并不一定能够生成`verilog`代码。
 
 #### 操作定义：
 
@@ -400,6 +424,17 @@ void HLS::generate_CFG() {
 
 此部分由邱峻蓬同学完成。
 
+`├── HLS.h`
+
+```c++
+// 实现调度算法
+void perform_scheduling();
+```
+
+`├── schedule.h`
+
+`├── schedule.cpp`
+
 本部分根据解析获得的数据流图和控制流图的结构，对于各运算操作进行周期的调度，考虑在运算资源约束下的最小延时的调度策略。需要注意的是块与块之间是独立考虑的，即不同数据流图之前的周期是分开调度的。
 
 其基本思想是根据采用列表调度法，根据数据流图的结构，首先进行ASAP和ALAP调度，根据这二者的调度结果作为列表调度法优先选取同一层级的操作的顺序的标准。然后再次进行ASAP调度，在每次周期迭代中考虑满足硬件约束的可调度操作并按照之前的规则优先选择，调度在该周期中。
@@ -408,18 +443,7 @@ void HLS::generate_CFG() {
 
 #### 函数及文件说明
 
-`├── HLS.h`
-
-```c++
-// 实现调度算法
-void perform_scheduling();
-```
-
-`├── controlflowgraph.h`
-
-`├── dataflowgraph.h`
-
-##### 首先在数据流图中进行各运算操作的宏定义：
+##### 根据数据流图中运算操作的宏定义：
 
 ```c++
 constexpr auto T_ASSIGN = 1; // 赋值操作;
@@ -439,64 +463,13 @@ constexpr auto T_PHI = 2;	 // Phi 操作
 constexpr auto T_RET = 1;	 // 返回操作
 ```
 
-##### 数据流图中节点类定义如下，调度结果存在`node`类的成员`T_start`和`T_end`中：
+##### 数据流图中节点的调度结果：
 
-```c++
-class node
-{
-	// 链表的节点，这个是链表中的元素
-public:
-	// 节点的数据
-	op element;
-	// 节点指向的节点的下标数组
-	std::vector<std::string> InputVar;
-	std::vector<int> next;
-	// 操作开始周期
-	int T_start;
-	// 操作结束周期
-	int T_end;
-	// 构造函数
-	node(const op &elemval, std::vector<int> &_next)
-	{
-		element = elemval;
-		next = _next;
-		T_start = T_end = 0;
-	}
-	node(const op &elemval)
-	{
-		element = elemval;
-		T_start = T_end = 0;
-	}
-	node()
-	{
-		T_start = T_end = 0;
-	}
-	int getTstart() const
-	{
-		return T_start;
-	}
-	int getTend() const
-	{
-		return T_end;
-	}
-	void setTstart(int CurrentT)
-	{
-		T_start = CurrentT;
-	}
-	void setTend(int CurrentT)
-	{
-		T_end = CurrentT;
-	}
-	// 操作绑定的寄存器
-	void bindregister();
-	// 操作绑定的运算资源
-	void bindCacRes();
-};
-```
+调度结果存储在数据流图的`node`类的成员`T_start`和`T_end`中，最后在数据流图中的`Period`中得到数据流图的完整运行周期数。
 
-`├── schedule.h`
+##### 硬件类`Hardware`：
 
-##### 调度头文件中定义了硬件类`Hardware`，存在默认构造函数即默认运算资源个数。
+我们定义了默认运算资源的个数。
 
 ```c++
 private:
@@ -523,7 +496,9 @@ public:
     }
 ```
 
-##### 还定义了周期类`Period_Rec`，存储`ASAP`调度和`ALAP`调度结果，第一个`int`为运算操作开始的周期，第二个`int`为运算操作结束的周期，`vector`下标为对应运算操作的索引。
+##### 周期类`Period_Rec`：
+
+存储`ASAP`调度和`ALAP`调度结果，第一个`int`为运算操作开始的周期，第二个`int`为运算操作结束的周期，`vector`下标为对应运算操作的索引。
 
 ```c++
 private:
@@ -531,9 +506,7 @@ private:
     std::vector<std::pair<int, int>> ALAP_RES;
 ```
 
-`├── schedule.cpp`
-
-##### 实现了如下函数：
+##### 方法说明：
 
 ```c++
 bool meet_resources_constraint(std::map<int, struct Hardware> &rec, int i, DataFlowGraph &DFG);

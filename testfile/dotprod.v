@@ -25,10 +25,10 @@ module dotprod
 
 
 	reg [31:0] Mem_cl;
-	reg [31:0] Mem_i;
 	reg [31:0] Mem_cr;
-	reg [31:0] Mem_c;
 	reg [31:0] Mem_i_inc;
+	reg [31:0] Mem_i;
+	reg [31:0] Mem_c;
 
 
 	reg [4:0] CurrentState;
@@ -141,19 +141,19 @@ module dotprod
 	state_start: begin
 		case(counter)
 		32'd0: begin
-		reg_3 <= Mem_i_inc;
+		reg_1 <= Mem_i_inc;
 		reg_2 <= Mem_c;
-		reg_1 <= Mem_cr;
+		reg_3 <= Mem_cr;
 		end
 		32'd1: begin
 		if(LastState == state_0)
 			reg_2 <= 0;
 		else if(LastState == state_calc)
-			reg_2 <= reg_3;
+			reg_2 <= reg_1;
 		if(LastState == state_0)
 			reg_1 <= reg_2;
 		else if(LastState == state_calc)
-			reg_1 <= reg_1;
+			reg_1 <= reg_3;
 		end
 		32'd2: begin
 		end
