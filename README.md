@@ -273,10 +273,13 @@ ret:
 │   ├── SRAM.v
 │   ├── dotprod.v
 │   ├── gcd.v
+│   ├── Sum.v
 │   ├── tb_gcd.v
 │   ├── tb_dotprod.v
+│   ├── tb_Sum.v
 │   ├── dotprod.ll
 │   ├── gcd.ll
+│   ├── Sum.ll
 ##### 源文件
 ├── src
 │   ├── main.cpp
@@ -299,9 +302,9 @@ ret:
 │   ├── FSMachine.cpp
 ##### 
 ├── README.md # 项目文档
+├── README.pdf # 项目文档
 ├── Makefile # windows平台下的makefile
 ├── hls.exe # windows平台下编译的结果，使用mingw32_make
-├── hls # Linux下编译结果，使用cmake
 ```
 
 ## 项目技术细节
@@ -376,59 +379,26 @@ void HLS::generate_CFG() {
 ##### 数据流图实现的接口：
 
 ```c++
-	// CreateGraph
-	// 
-	// 用于标记节点是否被访问
-	std::vector<int> Mark;
-	// 用于标记节点当前的入度，为0表示可以被直接访问
-	std::vector<int> InVertex;
-	// 用于标记节点当前的出度
-	std::vector<int> OutVertex;
-	void Initialize();
-	// DFG的创建
-	DataFlowGraph(basic_block& bb);
+// CreateGraph
+std::vector<int> Mark;// 用于标记节点是否被访问
+std::vector<int> InVertex;// 用于标记节点当前的入度，为0表示可以被直接访问
+std::vector<int> OutVertex;// 用于标记节点当前的出度
+void Initialize();
 
-	// operation
-	// 创建边
-	void CreateEdge(int from, int to);
-	// 修改流图的最短周期
-	int getPeriod() const {
-		return period;
-	}
+DataFlowGraph(basic_block& bb);
+// operation
+void CreateEdge(int from, int to);// 创建边
 
-	void setPeriod(int T) {
-		period = T;
-	}
-
-	// get
-	// 节点列表
-	std::vector<node>& get_opList() {
-		return opList;
-	}
-	// 输出边列表
-	std::vector<BranchEdge>& get_Branches() {
-		return Branchs;
-	}
-	// 块的输入变量列表
-	std::vector<InputEdge>& get_inputList() {
-		return inputList;
-	}
-	// 块的输出变量列表
-	std::vector<OutputEdge>& get_outputList() {
-		return outputList;
-	}
-	// 模块名
-	std::string& get_label() {
-		return label;
-	}
-	// 节点的出度节点
-	std::vector<int>& ToVertex(int from) {
-		return opList[from].next;
-	}
-	// 输出变量的哈希表
-	std::unordered_map<std::string, int>& myOutvartable(){
-		return vartable;
-	}
+int getPeriod() const;
+void setPeriod(int T);// 修改流图的最短周期
+// get
+std::vector<node>& get_opList();// 节点列表
+std::vector<BranchEdge>& get_Branches();// 输出边列表
+std::vector<InputEdge>& get_inputList();// 块的输入变量
+std::vector<OutputEdge>& get_outputList();// 块的输出变量列表
+std::string& get_label();// 模块名
+std::vector<int>& ToVertex(int from);// 节点的出度节点
+std::unordered_map<std::string, int>& myOutvartable();// 输出变量的哈希表
 ```
 
 主要介绍后面的方法的意义：
@@ -452,30 +422,14 @@ void HLS::generate_CFG() {
 ##### 控制流图实现的接口：
 
 ```c++
-	// 控制流图的生成
-	ControlFlowGraph(parser& p);
-
-	// 获得CFG图中的DFG节点
-	std::vector<graph_node>& getDFGNodes();
-
-	// 获得DFG在节点向量中的下标
-	int getIndex(std::string label);
-
-	//获取下一个块所指向的块的下标
-	std::vector<int> NextNode(std::string label);
-
-	std::vector<int> NextNode(int index);
-
-	// 返回信息的接口
-	std::string getfuncname() {
-		return func_name;
-	}
-	std::vector<var> &getvar() {
-		return vars;
-	}
-	int getRet_type() const {
-		return ret_type;
-	}
+ControlFlowGraph(parser& p);// 控制流图的生成
+std::vector<graph_node>& getDFGNodes();// 获得CFG图中的DFG节
+int getIndex(std::string label);// 获得DFG在节点向量中的下标
+std::vector<int> NextNode(int index);//获取下一个块所指向的块的下标
+// 返回信息的接口
+std::string getfuncname();
+std::vector<var>& getvar();
+int getRet_type() const;
 ```
 
 主要介绍一些方法的意义：
@@ -584,13 +538,24 @@ private:
 ##### 方法说明：
 
 ```c++
-bool meet_resources_constraint(std::map<int, struct Hardware> &rec, int i, DataFlowGraph &DFG);
-void reset(Hardware &hardware, int i, DataFlowGraph &DFG);
+bool meet_resources_constraint(
+    std::map<int, struct Hardware> &rec,
+    int i, 
+    DataFlowGraph &DFG
+);
+void reset(
+    Hardware &hardware,
+    int i, 
+    DataFlowGraph &DFG
+);
 int max(int a, int b);
 int min(int a, int b);
 void ASAP(DataFlowGraph &DFG, Period_Rec &REC);
 void ALAP(DataFlowGraph &DFG, Period_Rec &REC);
-bool cmp(const std::pair<int, int> &a, const std::pair<int, int> &b);
+bool cmp(
+    const std::pair<int, int> &a, 
+    const std::pair<int, int> &b
+);
 void improved_table_schedule_forDFG(DataFlowGraph &DFG);
 void improved_schedule_forCFG(ControlFlowGraph &CFG);
 ```
@@ -627,15 +592,15 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 `├── HLS.h `
 
 ```c++
-	// 每个块的寄存器分配结果
-	std::vector<std::vector<std::pair<std::string, int>>> REG;
+// 每个块的寄存器分配结果
+std::vector<std::vector<std::pair<std::string, int>>> REG;
 ```
 
 `├── HLS.cpp `
 
 ```c++
-	// 执行寄存器分配和绑定
-	perform_register_allocation_and_binding();
+// 执行寄存器分配和绑定
+perform_register_allocation_and_binding();
 ```
 
 `├── leftAlgorithm.h `
@@ -643,11 +608,11 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 ##### 生存周期结构体的定义
 
 ```c++
-	struct varPeriod {
-		std::string var;//变量名
-    		int startp;//起始周期
-    		int stopp;//结束周期
-	};
+struct varPeriod {
+	std::string var;//变量名
+   		int startp;//起始周期
+   		int stopp;//结束周期
+};
 ```
 
 这个结构体是为了提炼出`CFG`中对寄存器分配有用的信息，使之后的左边算法编写只用聚焦与这个结构体，可以在`CFG`完成前就开始编写，提高项目的并行度。
@@ -655,13 +620,13 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 ##### 根据调度结果得到生存周期
 
 ```c++
-	std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
+std::vector<varPeriod> graph2VarPeriods(DataFlowGraph& DFG);
 ```
 
 ##### 左边算法分配寄存器
 
 ```c++
-	std::vector<std::pair<std::string, int>> leftAlgorithm(std::vector<varPeriod> V);
+std::vector<std::pair<std::string, int>> leftAlgorithm(std::vector<varPeriod> V);
 ```
 
 左边算法将区间图中的区间按其左边（区间起点）排序，然后从排序的队列中，取出一个区间，逐个从剩下的区间里根据左边顺序，逐个找到与前面区间不重叠的区间，给相同“着色”（分配寄存器），重复上述操作，知道所有区间（变量）都被正确“着色”（分配寄存器）
@@ -693,16 +658,16 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 `├── HLS.h `
 
 ```c++
-	//计算资源（包括加法器、乘法器和除法器）
-	std::vector<computeresource> COR;
-	//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
-	std::vector<std::vector<std::pair<int, int>>>  CSP;
+//计算资源（包括加法器、乘法器和除法器）
+std::vector<computeresource> COR;
+//计算资源匹配结果（匹配的是node结点的编号和计算资源COR的序号）
+std::vector<std::vector<std::pair<int, int>>>  CSP;
 ```
 
 `├── HLS.cpp `
 
 ```c++
-	void HLS::perform_calculate_allocation_and_binding();
+void HLS::perform_calculate_allocation_and_binding();
 ```
 
 `├── computeresource.h `
@@ -714,34 +679,19 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 该部分完成了绑定的计算资源的基本信息的说明，包括计算资源的类别、输入端绑定寄存器、输出端绑定寄存器、以及相关绑定操作的方法定义
 
 ```c++
-	class computeresource{
-		//声明计算资源是加法器or乘法器or除法器
-		int flag;
-		//左边输入寄存器
-		std::vector<int> Ainputregisters;
-		//右边输入寄存器
-		std::vector<int> Binputregisters;
-		//输出寄存器
-		std::vector<int> outputregisters;
-		//构造函数
-		computeresource(int flag1, int outputreg);
-		//绑定计算资源左输入寄存器
-		void setinputAregisters(int reg) {
-			Ainputregisters.push_back(reg);
-		}
-		//绑定计算资源右输入寄存器
-		void setinputBregisters(int reg) {
-			Binputregisters.push_back(reg);
-		}
-		//绑定计算资源输出寄存器
-		void setoutputregister(int reg)；
-		//查找计算资源左输入端绑定寄存器
-		bool findareg(int reg);
-		//查找计算资源右输入端绑定寄存器
-		bool findbreg(int reg);
-		//查找计算资源输出端绑定寄存器
-		bool findoutreg(int reg);
-	}
+class computeresource{
+	int flag;// 声明计算资源是加法器or乘法器or除法器
+	std::vector<int> Ainputregisters;// 左边输入寄存器
+	std::vector<int> Binputregisters;// 右边输入寄存器
+	std::vector<int> outputregisters;// 输出寄存器
+	computeresource(int flag1, int outputreg);// 构造函数
+	void setinputAregisters(int reg);// 绑定计算资源左输入寄存器
+	void setinputBregisters(int reg);// 绑定计算资源右输入寄存器
+	void setoutputregister(int reg)；// 绑定计算资源输出寄存器
+	bool findareg(int reg);// 查找计算资源左输入端绑定寄存器
+	bool findbreg(int reg);// 查找计算资源右输入端绑定寄存器
+	bool findoutreg(int reg);// 查找计算资源输出端绑定寄存器
+}
 ```
 
 主要介绍一些定义的想法：
@@ -754,12 +704,8 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 该部分完成了对每一个`DFG`中的`node`结点和寄存器绑定结果的提取，以及该块内的寄存器绑定结果的查找，可以实现通过输入变量名查找绑定的寄存器编号
 
 ```c++
-	//提取每一个DFG中的node结点
-	std::vector<graph_node> DFGS = CFG.getDFGNodes();
-	
-	//实现块内寄存器绑定结果的查找
-	//该函数完成了通过输入变量名和DFG块寄存器绑定结果，实现块内寄存器绑定结果的查找
-	int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val);
+std::vector<graph_node>& DFGS = CFG.getDFGNodes();
+int findregister(std::vector<std::pair<std::string, int>> REGi, std::string val);
 ```
 
 ##### 实现将块内`node`结点与计算资源的绑定
@@ -767,17 +713,26 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 该计算资源的实例化结果和绑定结果分别存储在`HLS.h`中新定义的两个变量中
 
 ```c++
-	std::vector<computeresource> COR;
-	std::vector<std::vector<std::pair<int, int>>>  CSP;
+std::vector<computeresource> COR;
+std::vector<std::vector<std::pair<int, int>>>  CSP;
 ```
 
 ##### 函数接口：
 
 ```c++
-	//实现计算资源与计算结点的绑定
-	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE);
-	//实现将输出寄存器与计算资源输出端绑定
-	void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi);
+//实现计算资源与计算结点的绑定
+std::vector<std::pair<int, int>> bindcomputeresource(
+    DataFlowGraph& DFG, 
+    std::vector<std::pair<std::string, int>>REGi, 
+    std::vector<computeresource>& CORE
+);
+//实现将输出寄存器与计算资源输出端绑定
+void bindoutputregister(
+    DataFlowGraph& DFG,
+    std::vector<std::pair<std::string, int>>REGi, 
+    std::vector<computeresource>& CORE,
+    std::vector<std::pair<int, int>>CSPi
+);
 ```
 
 #### 技术细节：
@@ -787,26 +742,47 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 2.分别对三个`vector`迭代器进行操作，统计每个计算结点在不同编号的对应计算资源绑定的代价，从而生成匈牙利算法中的代价矩阵。这里，我考虑的代价为该计算资源为了绑定某一计算结点所额外增加的输入端数据选择器的输入个数：如果某一计算资源的两个输入变量分配的寄存器均未与该计算资源相连，那么其代价为2；若输入变量所在寄存器中有一个与该计算资源相连，那么代价为1；如果该计算结点两个输入寄存器均与该计算资源绑定，那么代价为0。该操作在以下函数中生成：
 
 ```c++
-	std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,std::vector<int>list, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE,int flag,Hardware&hardware);
+std::vector<std::vector<int>>creatematrix(
+    DataFlowGraph& DFG,
+    std::vector<int>list, 
+    std::vector<std::pair<std::string, int>>REGi,
+    std::vector<computeresource>& CORE,
+    int flag,
+    Hardware& hardware
+);
 ```
 
 3.利用匈牙利算法的步骤对矩阵进行操作，得到最大匹配数，并按照该匹配结果对这些计算结点进行计算资源的匹配。该操作在以下函数中实现：
 
 ```c++
-	//生成最大匹配
-	int maxcompair(std::vector<std::vector<cost_matrix_node>>&matrix2);
+//生成最大匹配
+int maxcompair(std::vector<std::vector<cost_matrix_node>>& matrix2);
 ```
 
 4.当某一时刻的所有计算结点均完成计算资源的匹配后，将这些计算结点标记为`VISITED`，并对计算资源绑定输入寄存器，同时将其后序计算结点的入度减一。再次重复步骤一，压入当前入度为0的所有计算结点，并按照以上流程操作，直至当前块内所有计算结点均完成计算资源的绑定。以上所有操作在以下函数中实现：
 
 ```c++
-std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&list,std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::vector<int>>matrix, int flag, Hardware& hardware,int&k);
+std::vector<std::pair<int, int>> Hungarian(
+    DataFlowGraph& DFG, 
+    std::vector<int>&list,
+    std::vector<std::pair<std::string, int>>REGi, 
+    std::vector<computeresource>& CORE,
+    std::vector<std::vector<int>>matrix, 
+    int flag, 
+    Hardware& hardware,
+    int& k
+);
 ```
 
 5.**匈牙利算法**实现计算资源的绑定后，通过对绑定结果遍历，完成对各个计算资源的输出寄存器绑定。该操作在以下函数中实现：
 
 ```c++
-void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi) 
+void bindoutputregister(
+    DataFlowGraph& DFG,
+    std::vector<std::pair<std::string, int>>REGi,
+    std::vector<computeresource>& CORE, 
+    std::vector<std::pair<int, int>>CSPi
+);
 ```
 
 
@@ -848,10 +824,10 @@ public:
 public:
 	int mux_index;                //选择器下标
 	bool chooseReg(int cycle, DataFlowGraph dfg, std::vector<Register> REGs,
-	  std::vector<std::pair<std::string, int>> REGi,
-	  std::vector<std::pair<int, int>> CSP,
-	  std::vector<computeresource> com,
-	  Register& reg, std::string& _var)；
+	std::vector<std::pair<std::string, int>> REGi,
+	std::vector<std::pair<int, int>> CSP,
+	std::vector<computeresource> com,
+	Register& reg, std::string& _var)；
 ```
 
 `bool chooseReg（）`：默认`reg`下标为-1、`_var`为`NULL`作为未找到的结果。挑选出当前周期`cycle`、当前模块`dfg`下，选择器输入端所选取的寄存器`reg`，以及寄存器中存储的变量`_var`。这里要注意的是在不同块中活跃的寄存器可能不同，如果直接访问将会导致溢出错误，因此需要先结合寄存器绑定结果`REGi`，挑选出当前块中会使用到的所有寄存器编号，记为`std::vector<int> curDFGinput;`。之后，利用Register类的`getData()`函数判断当前周期寄存器`i`是否存有数据（记为`v`）。如果存有数据，由于一个寄存器可能会与多个计算资源相连，无法保证`v`一定是在选择器连接的计算资源中被使用的，因此还需要结合计算资源绑定结果，找到相关周期的节点语句node进行判断，得到最后的结果。
@@ -891,8 +867,11 @@ struct Statement {
 ##### 其他函数
 
 ```c++
-void Pair2Register(DataFlowGraph &DFG, std::vector<std::pair<std::string, int>> REG, 
-                    std::vector<Register>& Regs)
+void Pair2Register(
+    DataFlowGraph &DFG, 
+    std::vector<std::pair<std::string, int>> REG, 
+    std::vector<Register>& Regs
+);
 ```
 
 这一函数用于将任钰浩同学的寄存器绑定结果`vector<pair<string, int>>` 结构转化成`vector<Register>`结构。
@@ -931,13 +910,13 @@ void HLS::genFSM() {
 ##### 接口说明
 
 ```c++
-	std::unordered_map<std::string, std::string>& getStateMap() {
-		return stateMapping;
-	}
-	// 生成module
-	void IOdefinationAppend(int ret_type,std::vector<var>& vars);
-	// 生成FSM
-	void FSMgener(ControlFlowGraph &CFG);
+std::unordered_map<std::string, std::string>& getStateMap() {
+	return stateMapping;
+}
+// 生成module
+void IOdefinationAppend(int ret_type,std::vector<var>& vars);
+// 生成FSM
+void FSMgener(ControlFlowGraph &CFG);
 ```
 
 ##### 技术细节
@@ -1012,9 +991,17 @@ void HLS::genFSM() {
 ##### 接口说明
 
 ```c++
-	void CounterGener(std::vector<std::vector<Cycle>> &Cycles, ControlFlowGraph &CFG);
-	void perPeriodGener(std::vector<std::vector<Cycle>>& Cycles, ControlFlowGraph& CFG);
-	void regDefGener(std::vector<std::vector<std::pair<std::string, int>>>& REG);
+void CounterGener(
+    std::vector<std::vector<Cycle>> &Cycles,
+    ControlFlowGraph &CFG
+);
+void perPeriodGener(
+    std::vector<std::vector<Cycle>>& Cycles, 
+    ControlFlowGraph& CFG
+);
+void regDefGener(
+    std::vector<std::vector<std::pair<std::string, int>>>& REG
+);
 ```
 
 ##### 块内运行周期计数器
@@ -1052,7 +1039,7 @@ void HLS::genFSM() {
   - `store`
 
   - ```verilog
-    2'd6: begin
+    	2'd6: begin
       		b_we0 <= 1;
       		b_address0 <= reg_1;
       		b_ad0 <= reg_2;
@@ -1067,7 +1054,7 @@ void HLS::genFSM() {
   - `load`
 
   - ```verilog
-    2'd4: begin
+    	2'd4: begin
       		b_ce0 <= 1;
       		b_address0 <= reg_1
       	end
@@ -1123,7 +1110,8 @@ void HLS::genFSM() {
 实际上是一个根据`CurrentState`的多路选择器。示例如下：
 
 ```verilog
-	assign cond = ((CurrentState == state_start) & reg_3) || ((CurrentState == state_cal) & reg_3);
+	assign cond = ((CurrentState == state_start) & reg_3) ||
+        ((CurrentState == state_cal) & reg_3);
 ```
 
 ## 项目测试
