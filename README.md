@@ -320,25 +320,17 @@ ret:
 `├── HLS.cpp`
 
 ```C++
-	// 实现图的生成
-	void generate_CFG();
-	//设置测试时间
-	void setTestTime();
-	// 遍历所有节点的算法
-	void travelaround();
-	void travelback();
-	// 实现调度算法
-	void perform_scheduling();
-	// 实现寄存器分配和绑定
-	void perform_register_allocation_and_binding();
-	// 实现运算资源的分配与绑定
-	void perform_calculate_allocation_and_binding();
-	// 控制逻辑综合方法
-	void synthesize_control_logic();
-    	// 生成状态机
-	void genFSM();
-	// 输出verilog文件
-	void outputfile();
+void generate_CFG();// 实现图的生成
+void setTestTime();//设置测试时间
+// 遍历所有节点的算法
+void travelaround();
+void travelback();
+void perform_scheduling();// 实现调度算法
+void perform_register_allocation_and_binding();// 实现寄存器分配和绑定
+void perform_calculate_allocation_and_binding();// 实现运算资源的分配与绑定
+void synthesize_control_logic();// 控制逻辑综合方法
+void genFSM();// 生成状态机
+void outputfile();// 输出verilog文件
 ```
 
 其中，函数`travelaround()`和`travelback()`是郑志宇同学给出的按照拓扑排序数据流图的方法，用作参考，并不参与项目功能的实现。其中，只介绍顺序遍历`travelaround()`，`travelback()`完全类似。`travelaround()`的具体的实现使用队列的数据结构，首先初始化节点的入度，取出所有入度为`0`的节点放入队列，入度为`0`代表节点并不依赖于同一个数据流图的其他节点，所以可以直接进入队列进行调度。
