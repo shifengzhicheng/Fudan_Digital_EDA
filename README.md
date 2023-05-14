@@ -775,9 +775,14 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 
 ```c++
 	//实现计算资源与计算结点的绑定
-	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE);
+	std::vector<std::pair<int, int>> bindcomputeresource(DataFlowGraph& DFG, 
+	std::vector<std::pair<std::string, int>>REGi, 
+	std::vector<computeresource>& CORE);
 	//实现将输出寄存器与计算资源输出端绑定
-	void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi);
+	void bindoutputregister(DataFlowGraph& DFG, 
+	std::vector<std::pair<std::string, int>>REGi, 
+	std::vector<computeresource>& CORE, 
+	std::vector<std::pair<int, int>>CSPi);
 ```
 
 #### 技术细节：
@@ -787,7 +792,11 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 2.分别对三个`vector`迭代器进行操作，统计每个计算结点在不同编号的对应计算资源绑定的代价，从而生成匈牙利算法中的代价矩阵。这里，我考虑的代价为该计算资源为了绑定某一计算结点所额外增加的输入端数据选择器的输入个数：如果某一计算资源的两个输入变量分配的寄存器均未与该计算资源相连，那么其代价为2；若输入变量所在寄存器中有一个与该计算资源相连，那么代价为1；如果该计算结点两个输入寄存器均与该计算资源绑定，那么代价为0。该操作在以下函数中生成：
 
 ```c++
-	std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,std::vector<int>list, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE,int flag,Hardware&hardware);
+	std::vector<std::vector<int>>creatematrix(DataFlowGraph& DFG,
+	std::vector<int>list, 
+	std::vector<std::pair<std::string, int>>REGi, 
+	std::vector<computeresource>& CORE,
+	int flag,Hardware& hardware);
 ```
 
 3.利用匈牙利算法的步骤对矩阵进行操作，得到最大匹配数，并按照该匹配结果对这些计算结点进行计算资源的匹配。该操作在以下函数中实现：
@@ -800,13 +809,21 @@ void improved_schedule_forCFG(ControlFlowGraph &CFG);
 4.当某一时刻的所有计算结点均完成计算资源的匹配后，将这些计算结点标记为`VISITED`，并对计算资源绑定输入寄存器，同时将其后序计算结点的入度减一。再次重复步骤一，压入当前入度为0的所有计算结点，并按照以上流程操作，直至当前块内所有计算结点均完成计算资源的绑定。以上所有操作在以下函数中实现：
 
 ```c++
-std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG, std::vector<int>&list,std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::vector<int>>matrix, int flag, Hardware& hardware,int&k);
+	std::vector<std::pair<int, int>> Hungarian(DataFlowGraph& DFG,
+	std::vector<int>&list,
+	std::vector<std::pair<std::string, int>>REGi, 	
+	std::vector<computeresource>& CORE, 
+	std::vector<std::vector<int>>matrix, int flag, 
+	Hardware& hardware,int& k);
 ```
 
 5.**匈牙利算法**实现计算资源的绑定后，通过对绑定结果遍历，完成对各个计算资源的输出寄存器绑定。该操作在以下函数中实现：
 
 ```c++
-void bindoutputregister(DataFlowGraph& DFG, std::vector<std::pair<std::string, int>>REGi, std::vector<computeresource>& CORE, std::vector<std::pair<int, int>>CSPi) 
+	void bindoutputregister(DataFlowGraph& DFG,
+	std::vector<std::pair<std::string, int>>REGi, 
+	std::vector<computeresource>& CORE, 
+	std::vector<std::pair<int, int>>CSPi) 
 ```
 
 
