@@ -2,6 +2,75 @@
 
 ## 复旦数字集成电路设计自动化项目文档
 
+### 原文件说明
+
+1. function define:
+
+```c++   
+define int foo(int a, int b); return value could be int/void
+```
+
+2. operators:
+```c++
+// support arrays: 
+int a[100]; define int foo(int a[], int b[], int N); 
+// load: 
+load a value from array. a[10] cannot be used directly. load(a, 10);
+// store: 
+save a value to array. store(a, 10, c) -> a[10] = c;
+=: 
+   assign value to a variable, follows the static single assignment rule
++: 
+   c = a + b;
+-:
+   c = a - b; 
+*:
+   c = a * b;
+/:
+   c = a / b;
+==:
+   cond = a == b;
+<:
+   cond = a < b;
+>: 
+   cond = a > b;
+>=:
+   cond = a >= b;
+<=:
+   cond = a <=b; 
+br:
+   br label or br cond label1 label2
+phi: 
+   phi function, select the right value from different blocks, according to SSA rule
+   phi(value1, block_label1, value2, block_label2, ...); The default block label from the definition of the function is 0.
+return:
+   return a value
+```
+
+3. examples
+```c++
+define int dotprod(int a[], int b[], int n)
+    c = 0;
+
+start:
+    i = phi(0, 0, i_inc, calc);
+    cond = i >= n;
+    br cond ret calc
+
+calc:
+    ai = load(a, i);
+    bi = load(b, i);
+    cl = phi(c, 0, cr, start);
+    ci = ai * bi;
+    cr = cl + ci;
+    i_inc = i + 1;
+    br start;
+
+ret:
+    cf = phi(0, c, start, cr);
+    return cf;
+```
+
 ### project要求
 
 以上述`IR`作为输入，我们提供基本的`IR`的`parser`
@@ -1235,3 +1304,8 @@ ret:
 <img src="picture\Sum_tb.png" alt="tb" width="800px;" />
 
 测试的结果如上所示。可以看到，`b_ad1`的结果符合预期。在`ap_done`信号跳变为`1`时，`ap_return`的结果为`55`，即数组`a`元素之和，符合预期。
+
+## 项目总结
+
+我们组员之间通过共同合作完成了这一个项目，虽然一开始这个项目很难入手，但是在我们搭好的架构与多次共同的商讨中我们最终得到了一个相对完善的解决方案。这个解决方案很好地解决了生成`verilog`的问题。同时我们将一些中间的执行过程的输出体现在`cmd`中可供参考。此外，我们测试了自己书写的一些程序，均有非常好的效果。我们同时也发现了`parser`文件的不完善而导致的解析中会产生一些空节点的问题。这个问题需要另外的解决，我们考虑尽可能不动`parser`文件，这样的结果是对`IR`文件的输入的要求更加严格了。如果再做进一步的精进的话，可以从降低对`IR`文件的要求入手，合并部分逻辑，封装部分冗余代码以及优化寄存器分配的方案等。
+
