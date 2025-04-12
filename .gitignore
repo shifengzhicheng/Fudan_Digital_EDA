@@ -1,0 +1,35 @@
+# 编译生成的二进制文件
+*.exe
+*.out
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+
+# CMake生成的文件
+build
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Visual Studio Code配置文件
+.vscode/
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# IDE生成的文件
+.idea/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db
